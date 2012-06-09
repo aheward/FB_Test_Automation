@@ -1,0 +1,1217 @@
+=begin
+
+This file is the repository of our globally useful custom methods.
+
+=end
+require '../lib/keyword_urls'
+# coding: UTF-8
+
+module PixImpConv
+
+  # This method builds a site link that is likely (though not guaranteed) to fire off a pixel for
+  # the desired campaign.
+  def get_link(campaign_name, site_id, campaign_id, site_url, revshare,pixel_page="")
+
+    if pixel_page == ""
+      begin
+        product_url = $sites_db.get_product_url(site_id)
+      rescue NoMethodError
+        product_url = "empty"
+      end
+
+      special_urls = KeywordURLs.new
+
+      url = case
+              when special_urls.by_site.keys.include?(site_id.to_i)
+                special_urls.by_site[site_id.to_i]
+
+              else
+                if campaign_name =~ /dynamic/i
+
+                  unless product_url == "empty"
+                    url = product_url
+                  else
+                    url = site_url
+                  end
+
+                  # If we're testing a landing campaign in a site that is revshare,
+                  # then we can still use the product link for testing...
+                elsif revshare.to_f > 0 && campaign_name == "landing"
+
+                  unless product_url == "empty"
+                    url = product_url
+                  else
+                    url = site_url
+                  end
+
+                elsif campaign_name != "landing"
+
+                  keywords = $sites_db.get_keywords_by_campaign_id(campaign_id)
+                  full = $sites_db.get_full_kwds_by_camp_id(campaign_id)
+                  keywords << full
+                  begin
+                    keywords.flatten!.shuffle!
+                      #p keywords
+                  rescue NoMethodError
+                    keywords = [campaign_name]
+                  end
+                  site_url + "?fb_key=#{keywords[0]}"
+
+                else
+                  site_url
+                end
+            end
+
+      # Below is code to force particular URLs for campaigns that are KNOWN
+      # to require specific URLs.
+      # The idea here should be to extend this list over time, to improve our ability to
+      # test keyword campaigns.
+      url1 = case
+               when special_urls.by_campaign.include?(campaign_id.to_i)
+                 special_urls.by_campaign[campaign_id.to_i]
+               else
+                 url
+             end
+    else
+      pixel_page
+    end
+  end
+
+  def get_pixeled(pixel_link, campaign_name, campaign_id, site_id)
+      self.goto(pixel_link)
+      sleep 3 if pixel_link =~ /afl;afc\=/ # Wait extra time for redirect when using affiliate link.
+      sleep 2 # Have to wait until pixel should have fired
+      if self.html =~ /pixel.fetchback.com/i
+        sleep(1) # Hopefully we've been pixeled
+      else
+        # We need to force the pixel
+        puts "Couldn't confirm the pixel was on the target page--meaning here:\n#{pixel_link}\nThis doesn't necessarily mean it wasn't! It's just\nthat 'pixel.fetchback.com' wasn't found in\nthe page HTML."
+        key = "&fb_key="
+
+        if campaign_name == "landing" || campaign_name == "dynamic"
+          keywords = ["not a keyword campaign"]
+        else
+
+          keywords = $sites_db.get_keywords_by_campaign_id(campaign_id).flatten! # execute(%|SELECT keyword FROM keywords WHERE campaignId = "#{campaign_id}";|).flatten!
+          begin
+            keywords.shuffle!
+          rescue NoMethodError
+            keywords = [campaign_name]
+          end
+          key = "&fb_key=#{keywords[0]}"
+        end
+
+        unless pixel_link =~ /afl;afc\=/
+          pixel_link = "http://pixel.fetchback.com/serve/fb/pdj?cat=&name=landing&sid=#{site_id}#{key}"
+          puts "Just in case, going to this pixel link, too:\n#{pixel_link}"
+          self.goto(pixel_link)
+          sleep 2
+        end
+
+      end
+      pixel_link
+  end
+
+  def get_ad_tags(campaign_id)
+    active_ad_tags = self.get_ad_tags_for_campaign(campaign_id)
+    begin
+      active_ad_tags.flatten!.shuffle!
+    rescue NoMethodError
+      FBErrorMessages::Imps.no_active_tags
+      return "no tags"
+    end
+    active_ad_tags
+  end
+
+  def get_impified(viewing_seconds, extra_ad_count, active_tags, conversion_type, click_url)
+    creative = tagify(active_tags[0])
+    self.goto(creative)
+    sleep(viewing_seconds)
+    puts "Impression link: #{creative}"
+    if conversion_type =~ /ctc/i
+      click = self.clicktrack(click_url)
+      self.goto(click)
+      puts "Clicktracking link: #{click}"
+    end
+
+    if extra_ad_count >= active_tags.length
+      count = active_tags.length - 1
+    else
+      count = extra_ad_count
+    end
+    unless count == 0
+      1.upto(count) do |x|
+        self.goto(tagify(active_tags[x]))
+        sleep viewing_seconds
+      end
+    end
+
+  end
+
+  def get_success(site_id)
+    if rand(15) > 0
+      crv = "#{rand(500)}"+".#{rand(10)}"+"#{rand(10)}"
+    else
+      crv = (rand(100) + 1).to_s
+    end
+    oid = random_nicelink(16)
+    success_link = "http://pixel.fetchback.com/serve/fb/pdj?cat=#{random_nicelink}&name=success&sid=#{site_id}" + "&crv=#{crv}" + "&oid=#{oid}"
+    self.goto(success_link)
+    sleep(2)
+    {:link=>success_link, :crv=>crv, :oid=>oid}
+  end
+
+  def affiliate_or_regular(site_id, url, campaign_name)
+
+    code = FetchBack.encode_affiliate_param(site_id, 'PPJ1')
+
+    pepperjam_url_1 = "http://pixel.fetchback.com/serve/fb/afl?afc=PPJ1&afx=#{code}&afu="
+    pepperjam_url_2 = "http://pixel.fetchback.com/serve/fb/afl;afc=PPJ1,afx=#{code},afu="
+
+    # Pick which one to use...
+    z = rand(2)
+    if z == 0
+      aff_link = pepperjam_url_1 + CGI::escape(url)
+    else
+      aff_link = pepperjam_url_2 + CGI::escape(CGI::escape(url))
+    end
+    aff = rand(2)
+    if aff == 0 && ( campaign_name == "landing" || campaign_name == "dynamic" )
+      pixel_link = aff_link
+    else
+      pixel_link = url
+      aff = 3 # This line is needed to make sure we don't go to affiliate logs later.
+    end
+    {:pixel=>pixel_link, :x=>aff}
+  end
+
+  def calc_imp_code
+    if self["cookieOverride"] == 0 || ( self["showPopularBrowsed"] == 0 && self["campaign"] == "dynamic" )
+      self["imp_code"] = 4
+    elsif self["campaign"] == "landing"
+      self["imp_code"] = 1
+    elsif self["campaign"] == "dynamic" && self["showPopularBrowsed"] == 1
+      self["imp_code"] = 1
+    end
+  end
+
+end # PixImpConv
+
+module LogManipulators
+
+  # This method is used to filter out affiliate log events that you're not interested in.
+  # It's like the "filtrate" method but it's needed because the affiliate log is unlike the other logs.
+  def affiliate_filtrate(log, cutoff_time)
+
+    items_i_did = [] # defining the list of all log items you're responsible for
+
+    if log !~ /#{@config.local_ip}/
+      FBErrorMessages::Logs.no_events_with_ip(@config.local_ip)
+    end
+
+    log.each_line do | log_entry |
+      if log_entry.include?(@config.local_ip)
+        items_i_did << log_entry
+      end
+    end
+
+    the_items_we_want = {:redirect=>[], :conversion=>[]} # Narrowing down the list to only the items for the last test
+
+    items_i_did.each do | log_entry |
+      log_entry_time = log_entry[16..24]
+      action = log_entry[/(redirect|conversion)/]
+      #p action
+      if log_entry_time > cutoff_time == true && action == "redirect"
+        the_items_we_want[:redirect] << log_entry
+      elsif log_entry_time > cutoff_time == true && action == "conversion"
+        the_items_we_want[:conversion] << log_entry
+      end
+
+    end
+
+    if the_items_we_want[:redirect].empty? == true && the_items_we_want[:conversion].empty? == true  # Want to try to make sure the list isn't totally empty
+      puts "Problem with affiliate log!"
+      FBErrorMessages::Logs.no_target_events_past_cutoff(cutoff_time)
+    end
+
+    the_items_we_want
+
+  end
+
+  def filtrate(log, cutoff_time)
+  # This takes the raw log file and eliminates all events that occurred prior to the time of the
+  # event you're interested in.
+
+    items_i_did = [] # defining the list of all log items you're responsible for
+
+    if log !~ /#{@config.local_ip}/
+      FBErrorMessages::Logs.no_events_with_ip(@config.local_ip)
+    end
+
+    log.each_line do | log_entry |
+      if log_entry.include?(@config.local_ip)
+        items_i_did << log_entry
+      end
+    end
+
+    the_items_we_want = [] # Narrowing down the list to only the items for the last test
+
+    items_i_did.each do | log_entry |
+      log_entry_time = log_entry[16..24]
+      if log_entry_time > cutoff_time
+        the_items_we_want << log_entry
+      end
+    end
+
+    if the_items_we_want.length == 0 # Want to try to make sure the list isn't totally empty
+      FBErrorMessages::Logs.no_target_events_past_cutoff(cutoff_time)
+    end
+
+    the_items_we_want
+  end
+
+  def get_log(log)
+  # grabs the desired log file for analysis
+
+    log1 = case(log)
+            when @config.pixel_log then @config.pixel_log1
+            when @config.imp_log then @config.imp_log1
+            when @config.conversion_log then @config.conversion_log1
+            when @config.affiliate_log then @config.affiliate_log1
+            when @config.product_log then @config.product_log1
+            when @config.proxy_log then @config.proxy_log1
+            else
+            #nothing
+    end
+
+    begin
+      log_entries = open(log).read #URI.parse(log).read
+    rescue SocketError
+      FBErrorMessages::Logs.unable_to_open_log_file(log)
+      exit
+    end
+
+    if @config.test_site == "qa-fido.fetchback.com"
+      begin
+        log_entries1 = open(log1).read #URI.parse(log1).read
+      rescue SocketError
+        FBErrorMessages::Logs.unable_to_open_log_file(log1)
+        exit
+      end
+      log_entries << log_entries1
+    end
+
+    log_entries
+
+  end
+
+  def get_product_log(site_id, event_time)
+
+    product_log = get_log(@config.product_log)
+
+    array = []
+    product_log.each_line do | line |
+      if line =~ /\t#{site_id}/
+        array << line
+      end
+    end
+    array.delete_if  { | lines | (lines.to_s)[16..24] < event_time  }
+    array
+  end
+
+  # TODO - Add support for campaign ID.
+  def parse_affiliate(affiliate_hash, conversion, site_id, campaign_id)
+  # This method takes an affiliate log event (that's been converted into a hash via the split_log method)
+  # and evaluates whether or not the event has the expected attributes, based on what was tested.
+
+    #p affiliate_hash
+
+    puts "---Something's up with the affiliate log!" if affiliate_hash[:level] != "INFO"
+    puts "---Affiliate log date is off! Log date: #{affiliate_hash[:date]}, Today's date: #{Time.now.strftime('%Y-%m-%d') }" if affiliate_hash[:date] != Time.now.strftime("%Y-%m-%d")
+    # :hostname=>"vm-qa-pixel02"
+    # :uid=>"1296902752006:0165304679398249"
+    puts "---Wrong site ID in affiliate log!" if affiliate_hash[:site_id].to_i  != site_id.to_i
+
+    # :campaign_id=>"8187"
+    # :affiliate_string=>"PPJ1:1296902752"}
+
+    case
+    when affiliate_hash[:action] == "afl_conversion"
+
+      puts "---Wrong conversion type in the affiliate log!" if affiliate_hash[:conversion_type] != conversion
+
+    when affiliate_hash[:action] == "afl_redirect"
+
+    else
+      # wow something is wrong
+    end
+
+  end
+
+  # This method takes the hash of the conversion log (made using the split_log method)
+  # and checks that the event matches expectations by comparing it to all the other data passed into it.
+  def parse_conversion(conversion_hash, conversion_type, pixel_hash, imp_hash, campaign_id, site_id, merit30= -1, merit7=50, merit3=25, merit1=5)
+
+    #p conversion_hash
+
+    puts "Latest impression time: #{Time.at(conversion_hash[:latest_imp_time].to_i)}" if conversion_hash[:latest_imp_time].to_i != 0
+    puts "Latest Pixel time: #{Time.at(conversion_hash[:latest_pixel_time].to_i)}" if conversion_hash[:latest_pixel_time].to_i != 0
+    puts "Site impression count: #{conversion_hash[:site_imp_count]}"
+    puts "Creative ID: #{conversion_hash[:creative_id]}" if conversion_hash[:creative_id].to_i != 0
+    puts "Credited campaign: #{conversion_hash[:campaign_name]}"
+    puts "---Wrong site ID in conversion log!" if conversion_hash[:site_id].to_i != site_id.to_i
+    # This "unless" clause is because I want to do specific conversion checks when DTC...
+    # ...or if we're doing a test of Loyalty. Need to be vigilant about the conversion type in that case.
+    unless conversion_hash[:conversion_type] == "dtc" || conversion_hash[:campaign_name] == "loyalty.campaign"
+      puts "---Unexpected Conversion Type!" if conversion_type != conversion_hash[:conversion_type]
+    end
+    puts "---Revenue inconsistency: #{conversion_hash[:client_revenue]} -- #{pixel_hash[:order_revenue]}" if pixel_hash[:order_revenue].to_f != conversion_hash[:client_revenue].to_f
+    puts "---Conflicting first site time! Conversion Log's time: #{Time.at(conversion_hash[:first_site_visit].to_i)}, Pixel log's time: #{Time.at(pixel_hash[:first_site_visit_time].to_i)}" if conversion_hash[:first_site_visit] != pixel_hash[:first_site_visit_time]
+    puts "---Conflicting order ID! #{conversion_hash[:order_id]} #{pixel_hash[:order_id]}" if conversion_hash[:order_id] != pixel_hash[:order_id]
+    puts "---Conversion log date is off! Log date: #{conversion_hash[:date]}, Today's date: #{Time.now.strftime('%Y-%m-%d') }" if conversion_hash[:date] != Time.now.strftime("%Y-%m-%d")
+    puts "---Something's up with the conversion log!" if conversion_hash[:level] != "INFO" || conversion_hash[:geo] != "1"
+
+    case
+    when conversion_hash[:conversion_type] == "dtc"
+
+      if conversion_hash[:site_imp_count].to_i > 0 && conversion_hash[:latest_imp_time] == "" && merit30 != -1
+        puts "Looks like the imp was served outside the Site's conversion window."
+      elsif conversion_hash[:site_imp_count].to_i > 0 && merit30 == -1
+        puts "---Imp count is not zero, so something is wacky."
+        puts "\tCheck the Site's conversion window against the latest imp time."
+      else
+        puts "Site cookie: #{conversion_hash[:site_cookie]}"
+      end
+
+    when conversion_hash[:conversion_type] == "vtc"
+
+      imp_time = Time.now - Time.at(conversion_hash[:latest_imp_time].to_i)
+      puts "Impression offset: ~#{(imp_time/86400).to_i} days"
+
+      unless merit30 == -1
+        case(imp_time)
+          when 604800.0..7776000.0
+            merit = merit30
+            puts "Expected percentage: #{merit30}%"
+          when 259200.0..604800.0 then
+            merit =  merit7
+            puts "Expected percentage: #{merit7}%"
+          when 86400.00..259200.0 then
+            merit =  merit3
+            puts "Expected percentage: #{merit3}%"
+          when 0.0..86400.0 then
+            merit =  merit1
+            puts "Expected percentage: #{merit1}%"
+          else
+            100
+        end
+
+        if conversion_hash[:merit].to_f*100.0 != merit
+          puts "---Wrong merit!!!"
+          puts "Log reports: #{conversion_hash[:merit].to_f*100.0}%"
+        end
+      end
+      if conversion_hash[:campaign_id].to_i  != campaign_id.to_i && imp_hash[:return_code] != "2002"
+        puts "---Unexpected campaign ID in the conversion log - #{conversion_hash[:campaign_id]}. Please compare with imp log results."
+      elsif conversion_hash[:campaign_id].to_i  != campaign_id.to_i && imp_hash[:return_code] == "2002"
+        puts "---Ad Tag Preview mode is messing up this test."
+      end
+
+      puts "Merit percentage: #{conversion_hash[:merit].to_f*100.0}%"
+      puts "Ad Tag ID: #{conversion_hash[:network_ad_tag]}"
+      puts "Campaign Cookie: #{conversion_hash[:campaign_cookie]}"
+      puts "Creative Cookie: #{conversion_hash[:creative_cookie]}"
+      puts "---Strange UID problem!" if pixel_hash[:uid] != imp_hash[:uid]
+      puts "---Strange UID problem!" if conversion_hash[:uid] != imp_hash[:uid]
+
+    when conversion_hash[:conversion_type] == "ctc"
+
+      puts "Click Cookie: #{conversion_hash[:click_cookie]}"
+      puts "---Strange UID problem!" if pixel_hash[:uid] != imp_hash[:uid]
+      puts "---Strange UID problem!" if conversion_hash[:uid] != imp_hash[:uid]
+      if conversion_hash[:campaign_id].to_i  != campaign_id.to_i && imp_hash[:return_code] != "2002"
+        puts "---Unexpected campaign ID in the conversion log - #{conversion_hash[:campaign_id]}. Please compare with imp log results."
+      elsif conversion_hash[:campaign_id].to_i  != campaign_id.to_i && imp_hash[:return_code] == "2002"
+        puts "---Ad Tag Preview mode is messing up this test."
+      end
+
+    when conversion_hash[:conversion_type] == "otc"
+
+      puts "Site Cookie: #{conversion_hash[:site_cookie]}"
+
+    else
+      #wow something is really wrong!
+    end
+
+    # :conversion_box=>"vm-qa-pixel02",
+
+  end
+
+  def parse_impression(imp_hash, campaign_id, ad_tag_ids, cpm, cpc)
+  # This method takes the hash of the impression log (made using the split_log method)
+  # and compares it to the other items to evaluate whether the event matches expectations.
+
+    #p imp_hash
+
+    case
+    when imp_hash[:event] == "imp"
+
+      creative_campaign_id = $sites_db.get_campaign_from_creative(imp_hash[:creative_id])
+      camp_name = $sites_db.execute(%|SELECT name FROM campaign_data WHERE campaignId = "#{creative_campaign_id}";|)[0][0]
+      if camp_name != ""
+        spb = $sites_db.get_spb_for_campaign(creative_campaign_id)
+      else
+        camp_name = "Unknown"
+        spb = 'x'
+      end
+      if camp_name == "control"
+        puts "Served a Control ad."
+      elsif camp_name == "Default"
+        puts "---Something is wrong. You've been served a Default PSA."
+        puts "Check:"
+        puts "1) That your test DB is in sync with the system you're testing."
+        puts "2) That there's an Active creative associated with the given Ad Tag."
+        puts "3) That you actually got pixeled for the site/campaign."
+
+      elsif spb == 1
+        puts "NOTE: The Creative served was from the #{camp_name} campaign (ID: #{creative_campaign_id})." if creative_campaign_id.to_i != campaign_id.to_i
+      elsif spb =='x'
+        puts "NOTE: Can't determine the campaign based on the Impression served.\nDoes the sites.db file need to be updated?"
+      else
+        puts "---NOTE: The Creative served was from the #{camp_name} campaign (ID: #{creative_campaign_id}), not the one you're testing. Just pointing it out. Generally not a problem." if creative_campaign_id.to_i != campaign_id.to_i
+      end
+
+      puts "Return code: #{imp_hash[:return_code]} - #{return_code(imp_hash[:return_code])}"
+      puts "---Unexpected Ad Tag ID in the log: #{imp_hash[:adtag_id]}"  if imp_hash != {} && ad_tag_ids.include?(imp_hash[:adtag_id]) == false
+      puts "---Something's up with the impression log!" if imp_hash[:level] != "INFO" || imp_hash[:geo] != "1"
+      puts "---Imp log date is off! Log date: #{imp_hash[:date]}, Today's date: #{Time.now.strftime('%Y-%m-%d') }" if imp_hash[:date] != Time.now.strftime("%Y-%m-%d")
+      puts "---Ad Tag CPM problem? - CPM: #{cpm.to_f} log: #{imp_hash[:cost].to_f * 1000}" if (cpm.to_f*100).round(0).to_i != (imp_hash[:cost].to_f * 100000).round(0).to_i unless imp_hash[:return_code].to_i==1005
+
+    when imp_hash[:event] == "interaction"
+
+    when imp_hash[:event] == "hover"
+
+    when imp_hash[:event] == "click"
+
+      puts "Creative ID clicked: #{imp_hash[:creative_id]}"
+      puts "---Click return code error: #{imp_hash[:return_code]}" if imp_hash[:return_code] != "1001"
+      puts "---CPC problem - Site CPC: #{cpc}, Log: #{imp_hash[:revenue]}" if cpc.to_f != imp_hash[:revenue].to_f
+
+    else
+
+    end
+
+    #:uid=>"1296846918430:7583645854610853",
+    #	:campaign_history_cookie=>"1_1296846937_8481:5_3090:16_3247:19",
+    #:creative_history_cookie=>"1_1296846937_22765:32554:1:0_19183:1:13",
+    #:imp_box=>"vm-qa-imp02",
+    #:browser=>"Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.13) Gecko/20101203 Firefox/3.6.13",
+
+    #:referrer_string=>nil
+
+  end
+
+  def parse_pixel(pixel_hash, site_id, campaign_id, campaign_name, account_id, adtag_id=0)
+  # This method takes the hash of the pixel log (made via the split_log method)
+  # and compares it to the rest of the passed information, evaluating whether or not the event's
+  # attributes match what's expected.
+
+    #p pixel_hash
+    puts "---Wrong Site ID in pixel log! Got: #{pixel_hash[:site_id]} Expected: #{site_id}" if pixel_hash[:site_id].to_i != site_id.to_i
+    puts "---Something's up with the pixel log level! #{pixel_hash[:level]}" if pixel_hash[:level] != "INFO"
+    puts "---Something's up with the pixel log geoid! #{pixel_hash[:geoid]}" if pixel_hash[:geoid] != "1"
+    puts "---Something's up with the pixel log n_a! #{pixel_hash[:n_a]}" if pixel_hash[:n_a] != "n/a"
+    puts "---Something's up with the pixel log zero! #{pixel_hash[:zero]}" if pixel_hash[:zero] != "0"
+    puts "---Pixel log date is off! Log date: #{pixel_hash[:date]}, Today's date: #{Time.now.strftime('%Y-%m-%d') }" if pixel_hash[:date] != Time.now.strftime("%Y-%m-%d")
+    puts "---Wrong account ID in Ad Tag! Advertiser ID: #{pixel_hash[:advertiser_id]} Ad Tag Listing: #{account_id}" if account_id.to_i != pixel_hash[:advertiser_id].to_i
+    puts "---Unexpected Last Ad Tag ID! Expected: #{adtag_id} Got:#{pixel_hash[:last_ad_tag_id]}" if pixel_hash[:last_ad_tag_id] != "0" && pixel_hash[:last_ad_tag_id].to_i != adtag_id.to_i
+
+    case
+    when pixel_hash[:event] == ("uid" || "pixel") && pixel_hash[:campaign_name] != "success"
+
+      puts "---Wrong Campaign ID in the pixel log! Expecting: #{campaign_id}, #{campaign_name} - Reported: #{pixel_hash[:campaign_id]}, #{pixel_hash[:campaign_name]}" if pixel_hash[:campaign_id].to_i  != campaign_id.to_i
+
+    when pixel_hash[:campaign_name] == "success"
+      # At this point do nothing
+    when pixel_hash[:event] == "keyword"
+
+      puts "---Wrong Campaign ID in the pixel log! Expecting:#{campaign_id} Reported: #{pixel_hash[:campaign_id]}" if pixel_hash[:campaign_id].to_i  != campaign_id.to_i
+
+    when pixel_hash[:event] =~ /err/
+      # At this point do nothing
+    else
+      # Nothing to see, here.
+    end
+
+    puts "Category ID: #{pixel_hash[:category_id]}" if pixel_hash[:category_id] != ""
+    #pixel_hash[:campaign_name=>"landing",
+    #pixel_hash[:uid=>"1296846868574:6794774187079015",
+    #pixel_hash[:pixel_box=>"vm-qa-pixel01",
+    puts "Order revenue: #{pixel_hash[:order_revenue]}" if pixel_hash[:order_revenue].to_i != 0
+    puts "Order ID: #{pixel_hash[:order_id]}" if pixel_hash[:order_id] != "Unknown"
+    puts "Last Creative ID: #{pixel_hash[:last_creative_id]}" if pixel_hash[:last_creative_id].to_i != 0
+    puts "Last Creative time: #{Time.at(pixel_hash[:latest_creative_time].to_i)}" if pixel_hash[:latest_creative_time].to_i != 0
+    puts "First site visit time: #{Time.at(pixel_hash[:first_site_visit_time].to_i)}" if pixel_hash[:first_site_visit_time].to_i != 0
+    puts "Referrer domain: #{pixel_hash[:referrer_domain]}" if pixel_hash[:referrer_domain] != "n/a"
+    puts "Last creative hovered: #{pixel_hash[:last_hovered]}" if pixel_hash[:last_hovered].to_i != 0
+    puts "Last hover time: #{Time.at(pixel_hash[:last_hover_time].to_i)}" if pixel_hash[:last_hover_time].to_i != 0
+    puts "Seconds between visits: #{pixel_hash[:seconds_between_visits]}" if pixel_hash[:seconds_between_visits] != ""
+
+  end
+
+  def parse_product(product_hash, site_id)
+  # This method takes the hash of the product log, made using the split_log method
+  # and displays the output, so that the tester can decide whether or it meets expectations
+
+  # Future projects:
+  # 1) Improve the scripts so that they check the product IDs automatically, no human needed.
+  # 2) Set up dummy client web sites so that abandoned and purchased products can be tested. (this is a Jira task right now)
+
+    #p product_hash
+
+    puts "---Something's up with the product log!" if product_hash[:level] !="INFO"
+    #product_hash[:date=>"2011-02-05"
+    # product_hash[:time=>""
+    # product_hash[:uid=>"1296903571961:0453023761656509"
+    puts "Last abandoned product: #{product_hash[:abandoned_product]}"
+    puts "Last browsed product: #{product_hash[:browsed_product]}"
+    puts "Purchased products: #{product_hash[:purchased_product]}"
+    puts "Abandoned products: #{product_hash[:all_abandoned]}"
+    puts "Browsed products: #{product_hash[:all_browsed]}"
+    puts "---Wrong site ID!" if product_hash[:site_id].to_i != site_id.to_i
+
+  end
+
+  def product_filtrate(log, cutoff_time)
+  # This method takes the raw product log and culls it down to
+  # the last couple events, based on the specified cutoff time.
+
+
+    the_items_we_want = [] # Narrowing down the list to only the items for the last test
+
+    log.each do | log_entry |
+      log_entry_time = log_entry[16..24]
+
+      if log_entry_time > cutoff_time
+        the_items_we_want << log_entry
+      end
+    end
+
+    if the_items_we_want.empty? == true || the_items_we_want == nil  # Want to try to make sure the list isn't totally empty
+      the_items_we_want = ["No\tproducts?\tThis may be a problem!"]
+    end
+
+    the_items_we_want
+  end
+
+  def proxy_filtrate(log, cutoff_time, site_id)
+  # This method takes the proxy log and deletes all lines that are prior to the cutoff time
+  # and not related to the desired site id.
+
+    items_i_did = [] # defining the list of all log items you're responsible for
+
+    log.each_line do | log_entry |
+      if log_entry[25..28].to_i == site_id.to_i
+        items_i_did << log_entry
+      end
+    end
+
+    the_items_we_want = [] # Narrowing down the list to only the items for the last test
+
+    items_i_did.each do | log_entry |
+      log_entry_time = log_entry[16..24]
+
+      if log_entry_time > cutoff_time
+        the_items_we_want << log_entry
+      end
+    end
+
+    if the_items_we_want.empty? == true || the_items_we_want == nil  # Want to try to make sure the list isn't totally empty
+      the_items_we_want = ["No Feed\tor not\ta\tdynamic\tadvertisement"]
+    end
+
+    the_items_we_want
+  end
+
+  # This method evaluates the passed code variable.
+  # You get this code from the impression log--generally after you've converted it
+  # to a hash using the split_log method.
+  def return_code(code)
+
+    code.chomp!
+    case(code)
+      when "10" then "Hover entry"
+      when "1000" then "Standard imp"
+      when "1001" then "Standard click"
+      when "1002" then "Product campaign"
+      when "1003" then "Keyword campaign"
+      when "1004" then "Loyalty campaign"
+      when "1005" then "Control campaign"
+      when "1006" then "Site default imp"
+      when "1007" then "Cookie Override, no history"
+      when "1010" then "Cookie Override with history"
+      when "2000" then "Preview imp"
+      when "2001" then "Preview click"
+      when "2002" then "Preview Ad Tag"
+      when "4001" then "Default preview ad tag"
+      when "4002" then "Default size unavailable"
+      when "4003" then "Default no campaign cookie"
+      when "4004" then "Default successed"
+      when "4005" then "Default no match"
+      when "4006" then "Default unknown error"
+      when "4007" then "Something completely weird just happened"
+      when "4008" then "Ad Tag Preview, but still shown default"
+      when "4010" then "Default other site history"
+      when "5000" then "Ad tag javascript"
+      when "5003" then "Hover?"
+      else "No clue what this return code means!"
+    end
+  end
+
+  # This method is obsolete but I'm keeping it around because I
+  # think it's still used in one or more of the "live" scripts.
+  def split_log_old(array_entry)
+    array_entry.split("\t")
+  end
+
+  # This method converts a log entry into a hash object according to the
+  # specified log type.
+  # The idea is to then take the hash object and either parse it or else
+  # report the data or use it for additional tests.
+  def split_log(entry, log_type)
+
+    unless entry == nil
+      array = entry.split("\t")
+
+      hash = {:level => array[0], :date=> array[1],
+        :time=> array[2] }
+
+      log_hash = case(log_type)
+        when "pixel" then
+          hash.merge(:ip=> array[3],
+          :event=> array[4],
+          :site_id=> array[5],
+          :category_id=> array[6],
+          :campaign_name=> array[7],
+          :geoid=> array[8],
+          :uid=> array[9],
+          :pixel_box=> array[10],
+          :zero=> array[11],
+          :n_a=> array[12],
+          :order_revenue=> array[13],
+          :order_id=> array[14],
+          :last_creative_id=> array[15],
+          :latest_creative_time=> array[16],
+          :return_visit=> array[17],
+          :first_site_visit_time=> array[18],
+          :referrer_domain=> array[19],
+          :campaign_id=> array[20],
+          :advertiser_id=> array[21],
+          :last_hovered=> array[22],
+          :last_hover_time=> array[23],
+          :seconds_between_visits=> array[24],
+          :last_ad_tag_id=> array[25])
+        when "impression" then
+          hash.merge(:ip=> array[3],
+          :event=> array[4],
+          :creative_id=> array[5],
+          :geo=> array[6],
+          :revenue=> array[7],
+          :cost=> array[8],
+          :uid=> array[9],
+          :adtag_id=> array[10],
+          :campaign_history_cookie=> array[11],
+          :creative_history_cookie=> array[12],
+          :imp_box=> array[13],
+          :browser=> array[14],
+          :return_code=> array[15].chomp,
+          :referrer_string=> array[16])
+        when "conversion" then
+          hash.merge(:ip=> array[3],
+          :conversion_type=> array[4],
+          :site_id=> array[5],
+          :campaign_name=> array[6],
+          :campaign_id=> array[7],
+          :uid=> array[8],
+          :geo=> array[9],
+          :conversion_box=> array[10],
+          :creative_id=> array[11],
+          :latest_imp_time=> array[12],
+          :latest_pixel_time=> array[13],
+          :first_site_visit=> array[14],
+          :network_ad_tag=> array[15],
+          :site_imp_count=> array[16],
+          :client_revenue=> array[17],
+          :order_id=> array[18],
+          :merit=> array[19],
+          :creative_cookie=> array[20],
+          :campaign_cookie=> array[21],
+          :click_cookie=> array[22],
+          :site_cookie=> array[23])
+        when "products" then
+          hash.merge(:uid=> array[3],
+          :abandoned_product=> array[4],
+          :browsed_product=> array[5],
+          :purchased_product=> array[6],
+          :clicked_product=> array[7],
+          :all_abandoned=> array[8],
+          :all_browsed=> array[9],
+          :site_id=> array[10].chomp)
+        when "proxy" then
+          hash.merge(:site_id=> array[3],
+          :product_id=> array[4],
+          :fb_product_id=> array[5],
+          :image_url=> array[6],
+          :exception_class=> array[7],
+          :exception_msg=> array[8],
+          :time_to_load=> array[9],
+          :cached_size=> array[10],
+          :image_status=> array[11])
+        when "affiliate_redirect" then
+          hash.merge(:ip=> array[3],
+          :hostname=> array[4],
+          :action=> array[5],
+          :uid=> array[6],
+          :site_id=> array[7],
+          :affiliate_string=> array[8])
+        when "affiliate_conversion" then
+          hash.merge(:ip=> array[3],
+          :hostname=> array[4],
+          :action=> array[5],
+          :uid=> array[6],
+          :site_id=> array[7],
+          :conversion_type=> array[8],
+          :campaign_id=> array[9],
+          :affiliate_string=> array[10])
+        when "imp_var" then
+          hash.merge(:ip=> array[3],
+          :uid=> array[4],
+          :creative_id=> array[5],
+          :json_object=> array[6])
+        when "form" then
+          hash.merge(:ip=> array[3],
+          :uid=> array[4],
+          :creative_id=> array[5],
+          :json_object=> array[6])
+        else
+          puts "You have a typo in your log type for the parser. Fix it."
+      end
+    else
+      puts "No logged event (or something)"
+    end
+  end
+
+  # This creates the link that simulates the global clicking of an ad.
+  # It would be good at some point to extend this method's capabilities, such that it creates a product-specific click link
+  # when testing dynamic campaigns.
+  def clicktrack(link="http://www.fetchback.com")
+
+    xrx = self.html[/xrx=\d+/]
+    crid = self.html[/crid=\d+/]
+    tid = self.html[/tid=\d+/]
+
+    # Placeholder code in case we need to use it...
+    #escaped_link = CGI::escape(link)
+    # click_link = "http://imp.fetchback.com/serve/fb/click?#{xrx}&#{crid}&#{tid}&clicktrack=http://fido.fetchback.com/clicktrack.php%3F%2C&rx=#{escaped_link}"
+
+    click_link = "http://imp.fetchback.com/serve/fb/click?#{xrx}&#{crid}&#{tid}&clicktrack=http://fido.fetchback.com/clicktrack.php%3F%2C"
+
+    #puts click_link
+  end
+
+  # Method to parse the link
+  # This method is mostly obsolete, but is still used in fido-classes.rb
+  # for grabbing the pixel links sub-strings.
+  def stripify(string)
+
+    string.sub!("adtag.js", "imp")
+    front = string.rindex ("'h")
+    string.slice!(0..front)
+    back = string.index ("'")
+    last = string.length
+    string.slice!(back, last)
+    string.gsub!("cat=", "cat=#{random_nicelink}")
+
+    # this part is strictly for special testing situations...
+    #x = rand(5)
+    #if x == 0
+    #	string.gsub!("name=landing", "name=#{random_nicelink}")
+    #end
+
+    string
+  end
+
+  # this method makes an impression link based on the passed ad tag id.
+  def tagify(ad_tag_id)
+    "http://imp.fetchback.com/serve/fb/imp?tid=#{ad_tag_id}"
+  end
+
+  def calc_offset_time(global_offset, local_adjustment)
+    (Time.now.utc - global_offset - local_adjustment).strftime("%X")
+  end
+
+end # LogManipulators
+
+module FidoTamers
+
+  def fido_log_in(user, pwd)
+    # Logs in to Fido with specified user credentials.
+
+    if self.text.include?("Password:")			# If we're on the log in page...
+      unless self.text_field(:name, "j_username").value.include?(user)
+        self.text_field(:name, "j_username").set(user) # Username and password commands go here
+        self.text_field(:name, "j_password").focus
+        self.text_field(:name, "j_password").set(pwd)
+      end
+      self.button(:name, "submit").click		# Logs in to Fido
+      sleep(1)
+      if self.button(:name, "submit").exist?
+        self.button(:name, "submit").click
+      end
+    end
+      self.link(:text=>"Privacy Policy").wait_until_present
+      AccountsIndex.new @browser
+  end
+  alias login fido_log_in
+  alias log_in fido_log_in
+
+  def open_fido_site(site)
+    # Use this method for navigating to desired site overview pages in Fido.
+    # The method assumes you're already logged in to Fido.
+
+    self.link(:text, "Sites Index").wait_until_present
+    self.link(:text, "Sites Index").click		# Sites Index
+    if site[0] =~ /\d/
+      self.link(:text, "9").click
+    else
+      self.link(:text, site[0].upcase).click
+    end
+    begin
+      self.link(:text, "Terms & Conditions").wait_until_present
+      if self.link(:text, site).exist?
+        self.link(:text, site).click		# Client link
+        return true
+      else
+        self.link(:text, "All").click
+        self.link(:text, "Terms & Conditions").wait_until_present
+        self.link(:text, site).click		# Client link
+        return true
+      end
+    rescue Watir::Exception::UnknownObjectException
+      puts "#{site} doesn't appear to be Active"
+      return false
+    end
+  end
+
+end
+
+module Randomizers
+
+  def random_non_ASCII_string(length=10, s="") # FIDO should reject these strings
+    length.enum_for(:times).inject(s) do |result, index|
+      s << rand(1024) + 256
+    end
+  end
+
+  def random_ASCII_string(length=10, s="")  # WARNING: Uses all possible printable EXTENDED ASCII chars!
+    length.enum_for(:times).inject(s) { s << rand(221) + 33 }  # Use this when you're trying to be mean to the code.
+  end
+
+  def random_string(length=10, s="")  # A "friendlier" version of the above.  Doesn't use high ASCII.
+    length.enum_for(:times).inject(s) { s << rand(93) + 33 }
+  end
+
+  def random_alphanums_plus(length=10)  # A "friendlier" version of the above. Makes JSSH-compatible strings.
+                                        # Note that this character set is larger than what is allowed for OIDs. OIDs allow only the following: [-._@#,0-9A-Za-z]
+                                        # Characters outside that set will be dropped from the string.
+    chars = %w{a b c d e f g h j k m n p q r s t u v w x y z A B C D E F G H J K L M N P Q R S T U V W X Y Z 0 1 2 3 4 5 6 7 8 9 ` ~ ! @ # $ % ^ & * ( ) _ + - = | [ ] ; : < > , . /}
+    (0...length).map { chars[rand(chars.size)]}.join
+  end
+
+  def random_nicelink(length=10)  # A "friendlier" version of the above. No characters need to be escaped for valid URLs.
+                                  # Uses no Reserved or "Unsafe" characters--except the @ sign--and the plus sign,.
+                                  # Also avoids the comma, which screws up the initial pixel link if it's in the category value.
+    chars = %w{a b c d e f g h j k m n p q r s t u v w x y z A B C D E F G H J K L M N P Q R S T U V W X Y Z 0 1 2 3 4 5 6 7 8 9 @ _ + - .}
+    (0...length).map { chars[rand(chars.size)]}.join
+  end
+
+  def random_alphanums(length=10, s="")  # A "friendlier" version of the above.  Only uses letters and numbers.
+    chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ0123456789'
+    length.times { s << chars[rand(chars.size)] }
+    s.to_s
+  end
+
+  def random_letters(length=10, s="")  # Only uses letters.
+    chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ'
+    length.times { s << chars[rand(chars.size)] }
+    s.to_s
+  end
+
+  def random_numbers(length=10, s="")  # Only uses numbers.
+    length.enum_for(:times).inject(s) { s << rand(10) + 48 }
+  end
+
+end # Randomizers
+
+module MiscHelpers
+
+  def dirty(site_id, count=2, pause=3)
+    # Used to intersperse visiting of sites and ads that are NOT the site being tested.
+    # The idea is to make sure that events are properly logged to the target site and not to the
+    # "dirty" sites.
+
+    plinks = $sites_db.get_product_url_for_site(site_id)
+
+    plinks.shuffle!
+
+    first_pass = plinks[0..30]
+
+    first_pass.each do | site |
+
+      #get ad tags for the campaign...
+      site[2] = $sites_db.get_ad_tags_for_campaign(site[1])
+      site[2].flatten!
+    end
+
+    first_pass.delete_if { |x| x[2] == [] }
+
+    to_use = first_pass[0..(count-1)]
+
+    to_use.each do | site |
+
+      #get pixeled...
+      begin
+        self.goto(site[0])
+      rescue
+        # Do nothing...
+      end
+      sleep(1)
+
+      #serve imp...
+      begin
+        self.goto(tagify(site[2][rand(site[2].length)]))
+      rescue Timeout::Error
+        #do nothing
+      end
+      # pause for selected time...
+      sleep(pause)
+
+    end
+
+  end
+
+  def get_general_test_data(count) # Note that the count here is for sites IN ADDITION to the pricing cross-section sites.
+    sites_hashes = get_test_sites(count)
+    sites_hashes.delete_if { |hash| hash["campaign_name"] == "control" }
+    sites_hashes.delete_if { |hash| hash["campaign_name"] == "loyalty.campaign" }
+  end
+
+  def get_landing_test_data(count) # Note that the count here is for sites IN ADDITION to the pricing cross-section sites.
+    sites_hashes = get_test_sites(count)
+    sites_hashes.delete_if { |item| item["campaign_name"] != "landing" }
+  end
+
+  def get_dynamic_test_data(count) # Note that the count here is for sites IN ADDITION to the pricing cross-section sites.
+    sites_hashes = get_test_sites(count)
+    sites_hashes.delete_if { |item| item["campaign_name"] != "dynamic" }
+  end
+
+  def get_keyword_test_data(count) # Note that the count here is for sites IN ADDITION to the pricing cross-section sites.
+    sites_hashes = get_test_sites(count)
+    sites_hashes.keep_if { |item| item["campaign_name"] != "dynamic" && item["campaign_name"] != "Dynamic" && item["campaign_name"] != "landing" && item["campaign_name"] != "control" && item["campaign_name"] != "loyalty.campaign" }
+  end
+
+  def get_test_sites(count) # Note that the count here is for sites IN ADDITION to the pricing cross-section sites.
+    test_sites = []
+
+    pricing = [ {:pricing=>"revenueShare", :amount=>"0"},
+                {:pricing=>"cpm", :amount=>"0.000"},
+                {:pricing=>"cpa", :amount=>"0.000"},
+                {:pricing=>"cpc", :amount=>"0.000"} ]
+
+    pricing.each do | price |
+
+      items = $sites_db.get_site_ids_with_pricing(price[:pricing], price[:amount])
+      items.shuffle!
+      test_sites << items[0..4]
+
+    end
+
+    items = $sites_db.get_site_ids_in_creative_data
+    items.shuffle!
+    test_sites << items[0..count]
+
+    test_sites.flatten!
+
+    sites_hashes = $sites_db.get_test_site_data(test_sites)
+    @blacklist = BlacklistedSites.new.sites
+
+    sites_hashes.delete_if { |item| @blacklist.include?(item["siteId"]) }
+    sites_hashes.delete_if { |hash| hash["siteId"].to_i == 276 && hash["campaign_name"] != "General Campaign" }# Most BOMGAR campaigns will not test right.
+    sites_hashes.shuffle!
+  end
+
+  def regression_conversion_test(config, test_sites)
+    @config = config
+    sites_hashes = test_sites
+    site_ids = []
+    puts "*****************************"
+    puts "DTC, OTC, CTC, and VTC tests"
+    puts "*****************************"
+
+    @conversion_type = %w{dtc vtc ctc}
+
+    sites_hashes.each do | hash |
+      next if site_ids.include? hash["siteId"]
+      hash[:url] = get_link(hash["campaign_name"], hash["siteId"], hash["campaignId"], hash["url"], hash["revenueShare"])
+
+      #Create pixel link...
+      link_info = affiliate_or_regular(hash['siteId'], hash[:url], hash["campaign_name"])
+      pixel_link = link_info[:pixel]
+      aff = link_info[:x]
+
+      #get ad tag
+      active_ad_tags = $sites_db.get_ad_tags(hash["campaignId"])
+      test_tag = active_ad_tags[0]
+
+      result = $sites_db.get_ad_tag_data(test_tag)
+
+      begin
+        ad_tag_cpm = result[0]
+      rescue NoMethodError # If the result of the above query is Null...
+        site_ids << hash["siteId"]
+        FBErrorMessages::Sites.missing_data
+        next
+      end
+
+      network_name = result[1]
+      network_id = result[2]
+
+      creative_ids = $sites_db.get_creatives(hash['campaignId'])
+
+      # ==================
+      # Actual tests all go below...
+      # ==================
+
+      # Conversions iterator...
+      @conversion_type.each do | conv_type |
+
+        $browser = @config.browser
+        $browser.goto(@config.cookie_editor)
+        cookie_page = Cookies.new $browser
+        fb_uid = %|#{"%02d" %(hash['abTestPerc'].to_i)}|
+
+        cookie_page.uid=fb_uid
+        cookie_page.control
+
+        $browser.dirty(hash['siteId'], 1, 1)
+        sleep(4)
+
+        pixel_cutoff = calc_offset_time(@config.offset, 2)
+
+        pixel_url = $browser.get_pixeled(pixel_link, hash["campaign_name"], hash['campaignId'], hash['siteId'])
+
+        # Get contents of pixel log...
+        pixel = get_log(@config.pixel_log)
+
+        if conv_type == "dtc" # meaning if we're trying to do a DTC or OTC
+          sit_offsets = [ 7175, 7200 ]
+          sit_offset = sit_offsets[rand(2)]
+          if sit_offset > 7199
+            conv_type = "otc"
+          else
+            # We're still DTC
+          end
+          $browser.goto(@config.cookie_editor)
+          cookie_page = Cookies.new $browser
+          cookie_page.site_id=hash['siteId']
+          cookie_page.campaign_id=hash['campaignId']
+          cookie_page.offset="#{sit_offset}"
+          cookie_page.otc
+        end
+
+        conversion_report_header(hash['site_name'], hash['siteId'], hash['campaign_name'], hash['campaignId'], hash['cpc'],hash['cpm'], hash['cpa'], hash['cpe'], hash['revenueShare'], hash['abTestPerc'], conv_type)
+        network_ad_tags_report(network_id, network_name, active_ad_tags, creative_ids)
+
+        if aff == 0  # Meaning we want to test an affiliate link
+          affiliate_data = affiliate_redirect_report(@config.affiliate_log, hash, conv_type, pixel_cutoff)
+          if affiliate_data == "bad data"
+            FBErrorMessages::Logs.missing_affiliate_event(pixel_url,@config.affiliate_log,@config.affiliate_log1)
+            next
+          end
+        end
+
+        # If it's a VTC or CTC, then serve an impression...
+        imp_cutoff = calc_offset_time(@config.offset, 3)
+        unless conv_type == "dtc" || conv_type == "otc"
+
+          $browser.get_impified(@config.imp_seconds, @config.extra_imp_count, active_ad_tags, conv_type, hash[:url])
+
+        end
+
+        $browser.dirty(hash['siteId'], 1, 1)
+
+        sleep(3)
+        # Success
+        success_cutoff = calc_offset_time(@config.offset, 5)
+
+        success_data = $browser.get_success(hash["siteId"])
+
+        success_pixel_log = get_log(@config.pixel_log)
+
+        # Collect info from Conversion log...
+        conversion_log = get_log(@config.conversion_log)
+        afl_conv_log=""
+        if aff == 0 # Meaning we are using the affiliate link for testing...
+          afl_conv_log = get_log(@config.affiliate_log)
+        end
+        product_log=""
+        if hash['campaign_name'] =~ /dynamic/i
+          product_log = get_product_log(hash['siteId'], pixel_cutoff)
+        end
+
+        #Report Results....
+
+        pixel_data = pixel_report(pixel_url, hash['siteId'], hash['campaign_name'], hash['campaignId'], hash['advertiserId'], pixel_cutoff, pixel, test_tag)
+        if pixel_data == "bad data"
+          $browser.close
+          break
+        end
+
+        imp_report_data = impression_report(@config.imp_log, imp_cutoff, hash['campaignId'], active_ad_tags, ad_tag_cpm, hash['cpc'], conv_type)
+        if imp_report_data == "bad data"
+          $browser.close
+          break
+        end
+
+        success_pixel_report = success_report(success_pixel_log, success_cutoff,  hash['siteId'], hash['campaignId'], hash['campaign_name'], hash['advertiserId'], success_data, test_tag)
+        if success_pixel_report == "no pixel"
+          $browser.close
+          break
+        end
+
+        conversion_report(conv_type, conversion_log, success_cutoff, success_pixel_report, imp_report_data, hash['campaignId'], hash['siteId'])
+
+        if aff == 0
+          affiliate_conversion_report(afl_conv_log, pixel_cutoff, hash['siteId'], hash['campaignId'], conv_type)
+        end
+
+        if hash["campaign_name"] =~ /dynamic/i
+          product_report(product_log, pixel_cutoff, hash['siteId'])
+        end
+
+        $browser.show_cookies
+
+        $browser.close
+
+      end
+
+      site_ids << hash["siteId"]
+
+      # We're done!
+    end
+
+  end
+
+end
+

@@ -1,0 +1,8 @@
+K 10
+svn:ignore
+V 48
+blacklisted_sites.yml
+keyword_urls.yml
+sites.db
+
+END

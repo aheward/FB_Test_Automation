@@ -1,0 +1,196 @@
+#!/usr/bin/env ruby
+require '../config/conversion_env'
+
+test_sites = []
+
+pricing = [ {:pricing=>"revenueShare", :amount=>"0"},
+{:pricing=>"cpm", :amount=>"0.000"},
+{:pricing=>"cpa", :amount=>"0.000"},
+{:pricing=>"cpc", :amount=>"0.000"} ]
+
+pricing.each do | price |
+	
+	items = $sites_db.execute(%|SELECT siteId FROM site_data WHERE #{price[:pricing]} IS NOT "#{price[:amount]}" AND siteId IN (SELECT siteId FROM creative_data);|)
+	items.shuffle!
+	test_sites << items[0..1]
+
+end
+
+windows = ["90", "60", "45", "21", "14", "7", "5"]
+
+windows.each do | window |
+	data = ($sites_db.execute(%|SELECT siteId FROM site_data WHERE conversionWindow = "#{window}" AND siteId IN (SELECT siteId FROM creative_data);|))
+	data.shuffle!
+	test_sites << data[0]
+end	
+
+test_sites.flatten!.compact!
+
+sql =<<doof
+SELECT s.name site_name, url, s.siteId, c.name campaign_name, c.campaignId, conversionWindow, s.advertiserId, s.cpc, s.revenueShare
+FROM site_data s, campaign_data c
+WHERE c.siteId = s.siteId
+	AND c.performanceWeight IS NOT "0.0000"
+	AND c.campaignId 
+		IN (SELECT campaignId FROM creative_data)
+	AND s.siteId
+		IN (#{test_sites.join(", ")})
+;
+doof
+
+$sites_db.results_as_hash = true
+
+sites_hashes = $sites_db.execute(sql)
+
+sites_hashes.shuffle!
+#puts sites_hashes
+
+site_ids = []
+
+offset = ["2592000","2591900","691200","604800","604700","345555","259200","259100","86400","86240","20000","15000","10000"]
+
+browser = @config.browser
+
+browser.goto(@config.cookie_editor)
+cookie_edit = Cookies.new browser
+cookie_edit.uid="99"
+cookie_edit.control
+
+$sites_db.results_as_hash = false
+
+x = 0
+
+sites_hashes[0..12].each do | hash |
+	
+	next if site_ids.include?(hash["siteId"])
+	#next if hash["siteId"] == "2365"
+	next if hash["campaign_name"] == "control"
+	next if hash["campaign_name"] == "loyalty.campaign"
+	
+	merit_values = $sites_db.execute(%|SELECT period, value FROM vt_merit_data WHERE siteId = "#{hash["siteId"]}";|)
+	
+	begin
+		merit30 = merit_values[3][1].to_f * 100
+		merit7 = merit_values[2][1].to_f * 100
+		merit3 = merit_values[1][1].to_f * 100
+		merit1 = merit_values[0][1].to_f * 100
+	rescue NoMethodError
+		puts "--Missing merit values for this site."
+		puts "--moving on to next test..."
+		next
+	end
+
+	puts ""
+	puts "Testing #{hash["site_name"]}, #{hash["campaign_name"]} campaign."
+	puts "--------------------------------------------------"
+	puts "Site ID: #{hash["siteId"]}"
+	puts "Campaign ID: #{hash["campaignId"]}"
+	puts "Conversion window: #{hash["conversionWindow"]} days"
+	
+	hash[:url] = get_link(hash["campaign_name"], hash["siteId"], hash["campaignId"], hash["url"], hash["revenueShare"])
+	
+	pixel_cutoff = calc_offset_time(@config.offset, 0)
+	browser.goto(hash[:url])
+	puts "Pixel page: #{hash[:url]}"
+	sleep(1)
+	site_ids << hash["siteId"]
+	
+	pixel = get_log(@config.pixel_log)
+	
+	#get ad tag
+	active_ad_tags = $sites_db.execute(%|SELECT networkAdTagId FROM network_adtag_data WHERE campaignId = "#{hash['campaignId']}";|)
+	active_ad_tags.flatten!
+	
+	test_tag = active_ad_tags[rand(active_ad_tags.length)]
+
+cpm_sql = <<doof
+SELECT cpm
+FROM network_adtag_data
+WHERE networkAdTagId = "#{test_tag}"
+;
+doof
+	begin
+		ad_tag_cpm = ($sites_db.execute(cpm_sql))[0][0]
+	rescue NoMethodError
+		puts "Can't find the CPM value for the selected Ad Tag."
+		puts "That's just wacky. Probably means it's time to"
+		puts "update the sites.db file."
+		puts "In any case, we're moving on to the next test site..."
+		x += 1
+		next
+	end
+
+	creative = tagify(test_tag)
+	imp_cutoff = calc_offset_time(@config.offset, 1)
+	browser.goto(creative)
+	puts "Impression link: #{creative}"
+	sleep(2.5)
+
+	imp = get_log(@config.imp_log)
+	imp_log = filtrate(imp, imp_cutoff)
+	imp_hash = split_log(imp_log[-1].chomp, "impression")
+	
+	browser.goto(@config.cookie_editor)
+	cookie_edit = Cookies.new browser
+	cookie_edit.ad_tag_id=imp_hash[:adtag_id]
+	cookie_edit.creative_id=imp_hash[:creative_id]
+	cookie_edit.offset=offset[x]
+	cookie_edit.merit
+	
+	# Success
+
+	unless rand(15) == 0
+		crv = "#{rand(500)}"+".#{rand(10)}"+"#{rand(10)}"
+	else
+		crv = (rand(100) + 1).to_s
+	end	
+	oid = random_alphanums_plus(16)
+	success_link = "http://pixel.fetchback.com/serve/fb/pdj?cat=#{random_nicelink}&name=success&sid=#{hash["siteId"]}"  + "&crv=#{crv}" + "&oid=#{oid}"
+	
+	success_cutoff = calc_offset_time(@config.offset, 1)
+	browser.goto(success_link)
+	sleep(2.5)
+	puts "Success link: #{success_link}"
+	
+	success_pixel = get_log(@config.pixel_log)
+	
+	conversion_log = get_log(@config.conversion_log)
+
+	# Report results
+	
+	puts ""
+	puts "Pixel log, prior to impression or success. #{hash["campaign_name"].capitalize} campaign:"
+	puts filtrate(pixel, pixel_cutoff)
+
+	puts ""
+	puts "Served impression:"
+	puts imp_log
+	parse_impression(imp_hash, hash["campaignId"], active_ad_tags, ad_tag_cpm, hash["cpc"])
+
+	puts ""
+	puts "Success pixel:"
+	success_array = filtrate(success_pixel, success_cutoff)
+	success_array.delete_if  { | lines | lines.to_s.include?("success") == false }
+	begin
+		success_pixel_hash = split_log(success_array[-1].chomp, "pixel")
+	rescue NoMethodError
+		puts "--Missing log entry for success for some reason."
+		puts "--Skipping to next test, now..."
+		next
+	end
+	puts success_array
+	parse_pixel(success_pixel_hash, hash["siteId"].to_s, hash["campaignId"].to_s, hash["campaign_name"], hash["advertiserId"], test_tag)
+	
+	puts ""
+	puts "Conversion Log:"
+	puts filtrate(conversion_log, success_cutoff)
+	conversion_hash = split_log(filtrate(conversion_log, success_cutoff)[-1].chomp, "conversion")
+	parse_conversion(conversion_hash, "vtc", success_pixel_hash, imp_hash, hash["campaignId"].to_s, hash["siteId"].to_s, merit30, merit7, merit3, merit1)
+
+	puts "__________________________________"
+
+  browser.show_cookies
+
+	x += 1
+	
+end

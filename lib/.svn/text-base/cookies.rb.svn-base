@@ -1,0 +1,54 @@
+require 'page-object'
+
+class Cookies
+
+  include PageObject
+
+  text_field(:site_id, :id=>"siteId")
+  text_field(:campaign_id, :id=>"campaignId")
+  text_field(:creative_id, :id=>"creativeId")
+  text_field(:ad_tag_id, :id=>"networkAdTagId")
+  text_field(:offset, :id=>"offset")
+  text_field(:uid, :id=>"uid")
+  button(:otc, :id=>"otc")
+  button(:merit, :id=>"merit")
+  button(:control, :id=>"control")
+  button(:show_cookies, :value=>"Show Cookies")
+  checkbox(:debug, :name=>"debug")
+
+end
+
+# This module creates methods that allow you to get access
+# to a given cookie's info by
+# invoking it as a method on the browser object itself.
+#
+# @example
+#   @browser.uid[:value]
+#   => "1_1338645110_1338645060288:8431891593843600"
+#
+# If ever a new cookie is added, just add the new cookie's name
+# to the COOKIES list below and it will instantly become
+# available as a method.
+module FetchBackCookies
+
+  COOKIES = %w{uid kwd uat bpd cmp clk afl sit cre scg apd eng ppd act opt}
+
+  COOKIES.each do |cookie|
+    define_method(cookie) { keep_if(cookie) }
+  end
+
+  # Returns the UID of the uid cookie, without
+  # the version and timestamp prefix. Use with the
+  # browser object.
+  def unique_identifier
+    self.uid[/(?<=_)\d+:\d+$/]
+  end
+
+  private
+
+  def keep_if(name)
+    array = self.cookies.to_a.keep_if { |hash| hash[:name]==name }
+    array[0]
+  end
+
+end

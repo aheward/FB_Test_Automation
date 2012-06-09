@@ -1,0 +1,20 @@
+# Update these items as needed to ensure the Fido crawling scripts continue to work properly...
+
+fido_version:      "2.7.5"
+site_1:            "Avenue.com"                # Tests of Imp Counts. Site must be active
+site_2:            "Zagg"                      # More extensive tests of Site page. Site must be active and MUST have landing and dynamic campaigns.
+account_id:        "3111"                      # Must be the ID for the ACCOUNT associated with site 2.
+site_id_4_ssl:     "4270"                      # This is the site ID for the ssl pixel tests. Should be id for site 2
+test_creative:     "fb_zagg_160x600_04172012"  # Must be an active creative in Site 2's default campaign.
+test_network:      "Appnexus"                  # Must be a network listed in Site 2's default campaign
+test_ad_tag_name:  "AP_Zagg"                   # Must be the name of an Ad Tag listed in Site 2's default campaign page.
+account_manager:   "Melanie Thornton"          # Must be the name of an active AM
+site_3:            "NFL"                       # Site must be active
+test_account:      "Kynetic"                   # Account must be the account for Site 3.
+test_account_2:    "Allergy Be Gone"           # Account must be active and start with A
+active_user:       "abeabe"                    # Must be the user name of an active user that starts with A
+uat_site_name:     "Atlantis"                  # Must be the name of an Active site using UAT/Floodlight
+flat_fee_site:     "Anjolee"                   # Should be an active site that is flat fee (doesn't HAVE to be)
+site_4_chr_test:   "Gazelle"                   # Any Active site that has active campaigns and is NOT 3rd-party billing.
+site_2_4_chr_test: "Penn Foster"               # Any Active site that has active campaigns and is NOT 3rd-party billing.
+test_user:         "abranton2"                 # Login ID of any active user.
