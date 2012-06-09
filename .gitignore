@@ -1,0 +1,7 @@
+sites.db
+config.yml
+*.csv
+blacklisted_sites.yml
+keyword_urls.yml
+cipher.rb
+chromedriver.log

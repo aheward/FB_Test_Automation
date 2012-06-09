@@ -1,0 +1,75 @@
+# Browser you're going to test with
+browser: :firefox # Can be :firefox, :ie, :safari, :chrome...
+
+# The server you're going to test. Must be inside single quotes...
+server: 'pup' # Can be prod, pup, mutt, spike, qa-fido, cujo...
+
+# The offset is used by the scripts to quickly identify what
+# events are relevant in the logs.
+# You will need a different offset value, depending on where you are in the US and
+# whether or not it's currently DST.
+# Here's how to decide your offset value:
+# When there is daylight savings, OR you are NOT in AZ, the number should be 14400
+# When there isn't, and you ARE in AZ, then it should be 18000
+#
+# So, if you're in KY then your offset will always be 14400
+#
+# NOTE: If you are missing log events often then add a couple seconds to this
+# offset value...
+offset: 14402
+
+# Please enter the number of seconds you want to view
+# each creative served in tests...
+imp_viewing_time: 8
+
+# Please enter the number of EXTRA ads you want to view
+# per impression test. Note that if this number
+# exceeds the total of active ad tags for the site,
+# then that will be the total count shown, not this
+# number.
+extra_imps: 1
+
+# Below this line is stuff you won't have to edit often...
+# =========================
+
+# Cookie editing page...
+cookie: 'https://rptdev.fetchback.com/hub/xfb/testing/cookie_edit.php'
+
+# Your Fido login info...
+fido_username: ''
+fido_password: ''
+
+# Your confluence login info...
+confluence_username: ''
+confluence_password: ''
+
+# Confluence test data page...
+confluence_test_data: 'http://wiki.fetchback.net:8080/display/QC/Test+Data'
+
+# Other IP addresses...
+prod_pixel: '69.71.52.54'
+prod_imp: '72.44.192.89'
+pup_ip: '69.71.52.59'
+mutt_ip: '69.71.52.60'
+spot_ip: '69.71.52.53'
+cujo_ip: '69.71.52.221'
+spike_ip: '69.71.52.222'
+qa_pixel: '69.71.52.214' # The load balancer IP for pixels
+qa_imp: '69.71.52.215' # The load balancer IP for imps
+qa-fido_pixel1: '69.71.52.217'
+qa-fido_pixel2: '69.71.52.218'
+qa-fido_imp1: '69.71.52.219'
+qa-fido_imp2: '69.71.52.2220'
+
+# Logs...
+pixel: '/tmp/fb-pixels.log'
+imp: '/tmp/fb-imp.log'
+impvar: '/tmp/fb-impvar.log'
+conversion: '/tmp/fb-conversions.log'
+affiliate: '/tmp/fb-affiliate.log'
+product: '/tmp/fb-products.log'
+proxy: '/tmp/fb-proxy.log'
+
+
+
+
