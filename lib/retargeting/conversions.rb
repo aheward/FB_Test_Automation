@@ -1,7 +1,8 @@
 module Conversions
 
-  def regression_conversion_test(config, test_sites)
+  def regression_conversion_test(config, test_sites, conversion_types)
     @config = config
+    @browser = @config.browser
     sites_hashes = test_sites
     tested_sites = []
 
@@ -31,25 +32,18 @@ module Conversions
       # ==================
       # Actual tests all go below...
       # ==================
+      conversion_types.each do |conv_type|
 
-      # Conversions iterator...
-      CONVERSIONS.each do | conv_type |
-
-        @browser = @config.browser
         visit CookieEditor do |pg|
           pg.set_control_cookie(fb_uid)
         end
-
         @browser.dirty(hash['siteId'], 1, 1)
-        sleep(4)
-
         @browser.get_pixeled(hash)
 
         # Get contents of pixel log...
-        raw_pixel_log = get_log(@config.pixel_log)
+        get_pixel_log(hash)
 
         set_conversion_type(conv_type, hash)
-
         conversion_report_header(hash)
         network_ad_tags_report(hash)
         affiliate_redirect_report(@config.affiliate_log, hash)
@@ -63,41 +57,28 @@ module Conversions
 
         @browser.dirty(hash['siteId'], 1, 1)
 
-        sleep(3)
         # Success
-        success_cutoff = calc_offset_time(@config.offset, 5)
+        @browser.get_success(hash, @config.pixel_log)
 
-        success_data = @browser.get_success(hash["siteId"])
-
-        success_pixel_log = get_log(@config.pixel_log)
-
-        # Collect info from Conversion log...
-        conversion_log = get_log(@config.conversion_log)
-        afl_conv_log=""
-        if aff == 0 # Meaning we are using the affiliate link for testing...
-          afl_conv_log = get_log(@config.affiliate_log)
-        end
-        product_log=""
-        if hash['campaign_name'] =~ /dynamic/i
-          product_log = get_product_log(hash['siteId'], pixel_cutoff)
-        end
+        # Collect info from Conversion log, plus affiliate and product logs, if necessary...
+        get_conversion_plus(hash)
 
         #Report Results....
 
-        pixel_data = pixel_report(pixel_url, hash, pixel_cutoff, pixel, test_tag)
-        if pixel_data == "bad data"
+        pixel_report(hash)
+        if hash.data_error?
           @browser.close
           break
         end
 
-        imp_report_data = impression_report(@config.imp_log, imp_cutoff, hash['campaignId'], active_ad_tags, ad_tag_cpm, hash['cpc'], conv_type)
-        if imp_report_data == "bad data"
+        impression_report(@config.imp_log, hash)
+        if hash.data_error?
           @browser.close
           break
         end
 
-        success_pixel_report = success_report(success_pixel_log, success_cutoff,  hash['siteId'], hash['campaignId'], hash['campaign_name'], hash['advertiserId'], success_data, test_tag)
-        if success_pixel_report == "no pixel"
+        success_report(success_pixel_log, success_cutoff,  hash['siteId'], hash['campaignId'], hash['campaign_name'], hash['advertiserId'], success_data, test_tag)
+        if hash.data_error?
           @browser.close
           break
         end
@@ -113,16 +94,13 @@ module Conversions
         end
 
         @browser.show_cookies
-
-        @browser.close
-
+        @browser.clear_cookies
       end
 
-      site_ids << hash["siteId"]
+      tested_sites << hash["siteId"]
 
-      # We're done!
     end
-
+    @browser.close
   end
 
   def set_conversion_type(conv_type, hash)

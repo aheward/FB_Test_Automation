@@ -6,12 +6,12 @@ module Logs
 
     items_i_did = [] # defining the list of all log items you're responsible for
 
-    if log !~ /#{@config.local_ip}/
-      FBErrorMessages::Logs.no_events_with_ip(@config.local_ip)
+    if log !~ /#{$local_ip}/
+      FBErrorMessages::Logs.no_events_with_ip($local_ip)
     end
 
     log.each_line do | log_entry |
-      if log_entry.include?(@config.local_ip)
+      if log_entry.include?($local_ip)
         items_i_did << log_entry
       end
     end
@@ -45,12 +45,12 @@ module Logs
 
     items_i_did = [] # defining the list of all log items you're responsible for
 
-    if log !~ /#{@config.local_ip}/
-      FBErrorMessages::Logs.no_events_with_ip(@config.local_ip)
+    if log !~ /#{$local_ip}/
+      FBErrorMessages::Logs.no_events_with_ip($local_ip)
     end
 
     log.each_line do | log_entry |
-      if log_entry.include?(@config.local_ip)
+      if log_entry.include?($local_ip)
         items_i_did << log_entry
       end
     end
@@ -75,12 +75,12 @@ module Logs
     # grabs the desired log file for analysis
 
     log1 = case(log)
-             when @config.pixel_log then @config.pixel_log1
-             when @config.imp_log then @config.imp_log1
-             when @config.conversion_log then @config.conversion_log1
-             when @config.affiliate_log then @config.affiliate_log1
-             when @config.product_log then @config.product_log1
-             when @config.proxy_log then @config.proxy_log1
+             when $pixel_log then $pixel_log1
+             when $imp_log then $imp_log1
+             when $conversion_log then $conversion_log1
+             when $affiliate_log then $affiliate_log1
+             when $product_log then $product_log1
+             when $proxy_log then $proxy_log1
              else
                #nothing
            end
@@ -92,7 +92,7 @@ module Logs
       exit
     end
 
-    if @config.test_site == "qa-fido.fetchback.com"
+    if $test_site == "qa-fido.fetchback.com"
       begin
         log_entries1 = open(log1).read #URI.parse(log1).read
       rescue SocketError
@@ -106,17 +106,33 @@ module Logs
 
   end
 
-  def get_product_log(site_id, event_time)
+  def get_pixel_log(hash)
+    hash[:raw_pixel_log] = get_log($pixel_log)
+  end
+  
+  def get_conversion_plus(hash)
+    hash[:conversion_log] = get_log($conversion_log)
+    hash[:afl_conv_log] = ""
+    if hash[:affiliate] == 0 # Meaning we are using the affiliate link for testing...
+      hash[:afl_conv_log] = get_log($affiliate_log)
+    end
+    hash[:product_log] = ""
+    if hash['campaign_name'] =~ /dynamic/i
+      hash[:product_log] = get_product_log(hash)
+    end
+  end
+  
+  def get_product_log(hash)
 
-    product_log = get_log(@config.product_log)
+    product_log = get_log($product_log)
 
     array = []
     product_log.each_line do | line |
-      if line =~ /\t#{site_id}/
+      if line =~ /\t#{hash['siteId']}/
         array << line
       end
     end
-    array.delete_if  { | lines | (lines.to_s)[16..24] < event_time  }
+    array.delete_if  { | lines | (lines.to_s)[16..24] < hash[:pixel_cutoff]  }
     array
   end
 
@@ -248,7 +264,11 @@ module Logs
 
   end
 
-  def parse_impression(imp_hash, campaign_id, ad_tag_ids, cpm, cpc)
+  def parse_impression(imp_hash, hash)
+    campaign_id = hash['campaignId']
+    ad_tag_ids = hash[:active_ad_tags]
+    cpm = hash[:ad_tag_cpm]
+    cpc = hash['cpc']
     # This method takes the hash of the impression log (made using the split_log method)
     # and compares it to the other items to evaluate whether the event matches expectations.
 
@@ -257,10 +277,10 @@ module Logs
     case
       when imp_hash[:event] == "imp"
 
-        creative_campaign_id = $sites_db.get_campaign_from_creative(imp_hash[:creative_id])
+        creative_campaign_id = campaign_from_creative(imp_hash[:creative_id])
         camp_name = $sites_db.execute(%|SELECT name FROM campaign_data WHERE campaignId = "#{creative_campaign_id}";|)[0][0]
         if camp_name != ""
-          spb = $sites_db.get_spb_for_campaign(creative_campaign_id)
+          spb = spb_for_campaign(creative_campaign_id)
         else
           camp_name = "Unknown"
           spb = 'x'
@@ -312,7 +332,11 @@ module Logs
 
   end
 
-  def parse_pixel(pixel_hash, site_id, campaign_id, campaign_name, account_id, adtag_id=0)
+  def parse_pixel(pixel_hash, hash, adtag_id=0)
+    site_id = hash['siteId']
+    campaign_id = hash['campaignId']
+    campaign_name = hash['campaign_name']
+    account_id = hash[:network_id]
     # This method takes the hash of the pixel log (made via the split_log method)
     # and compares it to the rest of the passed information, evaluating whether or not the event's
     # attributes match what's expected.
@@ -647,8 +671,8 @@ module Logs
     "http://imp.fetchback.com/serve/fb/imp?tid=#{ad_tag_id}"
   end
 
-  def calc_offset_time(global_offset, local_adjustment)
-    (Time.now.utc - global_offset.to_i - local_adjustment).strftime("%X")
+  def calc_offset_time(local_adjustment)
+    (Time.now.utc - (FBConfig.get :offset).to_i - local_adjustment).strftime("%X")
   end
 
 end

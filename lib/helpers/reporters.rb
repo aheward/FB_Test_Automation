@@ -51,31 +51,31 @@ module Reporters
     puts "Creative IDS (non-control): #{hash[:creative_ids].join(", ")}"
   end
 
-  def pixel_report(pixel_link, hash, event_time, pixel_log, ad_tag)
+  def pixel_report(hash)
     site_id = hash['siteId']
     campaign_name = hash['campaign_name']
     campaign_id = hash['campaignId']
     advertiser_id = hash['advertiserId']
 
-    puts "\nPixel url: #{pixel_link}"
+    puts "\nPixel url: #{hash[:actual_pixel_url]}"
     print "Pixel log, prior to impression or success"
     if campaign_name != "control"
       puts ":"
     else
       puts ". #{campaign_name.capitalize} campaign:"
     end
-    close_pixel_events = filtrate(pixel_log, event_time)
+    close_pixel_events = filtrate(hash[:raw_pixel_log], hash[:pixel_cutoff])
 
     puts close_pixel_events
 
     target_pixel_event = close_pixel_events.find { | line | line =~ /#{campaign_name}/i }
     begin
-      pixel_hash = split_log(target_pixel_event.chomp, "pixel")
+      split_pixel_log = split_log(target_pixel_event.chomp, "pixel")
+      parse_pixel(split_pixel_log, hash, advertiser_id)
     rescue NoMethodError
       FBErrorMessages::Pixels.no_pixel_fired
       hash.store(:error, "bad data")
     end
-    parse_pixel(pixel_hash, site_id, campaign_id, campaign_name, advertiser_id, ad_tag)
   end
 
   def affiliate_redirect_report(log, hash)
@@ -103,15 +103,17 @@ module Reporters
     parse_affiliate(afl_conv_hash, conversion_type, site_id, campaign_id)
   end
 
-  def impression_report(log, event_time, campaign_id, ad_tags, ad_tag_cpm, cpc, conversion_type)
+  def impression_report(log, hash)
+    event_time = hash[:imp_cutoff]
+    conversion_type = hash[:cov_type]
+
     # get impression log data...
-    imp_hash = {}
     unless conversion_type == 'dtc' || conversion_type == 'otc'
       imp = get_log(log)
       imp_array = filtrate(imp, event_time)
 
       # Here's hoping the ad tag we want is there...
-      target = imp_array.keep_if { |line| line =~ /\t#{ad_tags[0]}\t/}
+      target = imp_array.keep_if { |line| line =~ /\t#{hash[:test_tag]}\t/}
 
       # fallback...
       generic = imp_array.find { | line | line =~ /\timp\t/ }
@@ -123,32 +125,29 @@ module Reporters
       end
 
       begin
-        imp_hash = split_log(imp_line.chomp, "impression")
+        split_imp_log = split_log(imp_line.chomp, "impression")
+        hash.store(:split_imp_log, split_imp_log)
       rescue NoMethodError
         FBErrorMessages::Imps.no_imp_event
-        "bad data"
+        hash.store(:error, "bad data")
       end
       puts ""
       puts "Impression events:"
       puts imp_array
 
-      hover_line = imp_array.find { | line | line =~ /\thover\t/ }
-
-      parse_impression(imp_hash, campaign_id, ad_tags, ad_tag_cpm, cpc)
+      parse_impression(split_imp_log, hash)
 
       click_line = imp_array.find { | line | line =~ /\tclick\t/ }
-
       if click_line != nil
         click_hash = split_log(click_line.chomp, "impression")
-        parse_impression(click_hash, campaign_id, ad_tags, ad_tag_cpm, cpc)
+        parse_impression(click_hash, hash)
       end
-
+      hover_line = imp_array.find { | line | line =~ /\thover\t/ }
       if hover_line != nil
         hover_hash = split_log(hover_line.chomp, "impression")
-        parse_impression(hover_hash, campaign_id, ad_tags, ad_tag_cpm, cpc)
+        parse_impression(hover_hash, hash)
 
       end
-      imp_hash
     end
   end
 

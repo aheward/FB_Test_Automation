@@ -13,4 +13,4 @@ require '../config/conversion_env'
 
 sites_hashes = get_general_test_data(10)
 
-regression_conversion_test(@config, sites_hashes)
+regression_conversion_test(@config, sites_hashes, CONVERSIONS)

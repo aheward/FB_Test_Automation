@@ -114,7 +114,8 @@ module Pixel
     hash.store(:actual_pixel_url, pixel_link)
   end
 
-  def get_success(site_id)
+  def get_success(hash, log)
+    hash[:success_cutoff] = calc_offset_time((FBConfig.get :offset), 2)
     if rand(15) > 0
       crv = "#{rand(500)}"+".#{rand(10)}"+"#{rand(10)}"
     else
@@ -124,7 +125,8 @@ module Pixel
     success_link = "http://pixel.fetchback.com/serve/fb/pdj?cat=#{random_nicelink}&name=success&sid=#{site_id}" + "&crv=#{crv}" + "&oid=#{oid}"
     self.goto(success_link)
     sleep(2)
-    {:link=>success_link, :crv=>crv, :oid=>oid}
+    hash.store(:success_pixel_log, get_log(log))
+    hash.store(:success_data, {:link=>success_link, :crv=>crv, :oid=>oid})
   end
 
   def pick_affiliate_or_regular(hash)
