@@ -5,3 +5,4 @@ blacklisted_sites.yml
 keyword_urls.yml
 cipher.rb
 chromedriver.log
+.idea*
