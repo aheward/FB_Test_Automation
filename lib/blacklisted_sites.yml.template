@@ -1,9 +1,0 @@
-# This is the list of sites blacklisted from testing.
-# Add or remove Site IDs from this list, as needed.
-# Please be sure each Site ID is preceded by a dash,
-# and on its own line. There should be no blank lines
-# in the list.
-sites:
-- 865 # Excluded because of Loyalty tests
-- 1821 # Excluded because of Loyalty tests
-- 3471 # Excluded because of Loyalty tests

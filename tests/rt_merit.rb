@@ -78,7 +78,7 @@ doof
 
   visit CookieEditor do |p|
 	p.set_merit_offset(imp_hash[:adtag_id], imp_hash[:creative_id]
-	cookie_edit.offset=OFFSET[offset_count]
+	cookie_edit.offset=MERIT_OFFSETS[offset_count]
 	cookie_edit.merit
 	
 	# Success

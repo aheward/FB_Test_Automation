@@ -1,5 +1,5 @@
 
-module Pages
+module PageNavigation
   def visit page_class, &block
     on page_class, true, &block
   end

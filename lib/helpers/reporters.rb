@@ -1,8 +1,19 @@
-require 'fb_error_messages'
 
 module Reporters
 
-  def conversion_report_header(site_name, site_id, campaign_name, campaign_id, cpc, cpm, cpa, cpe, revenue_share, control_perc, conversion_type)
+  def conversion_report_header(hash)
+    site_name = hash['site_name']
+    site_id = hash['siteId']
+    campaign_name =hash['campaign_name']
+    campaign_id = hash['campaignId']
+    cpc = hash['cpc']
+    cpm = hash['cpm']
+    cpa = hash['cpa']
+    cpe = hash['cpe']
+    revenue_share = hash['revenueShare']
+    control_perc = hash['abTestPerc']
+    conversion_type = hash[:conv_type]
+
     puts ""
     string =  "| #{site_name} | ID: #{site_id} | #{campaign_name} | Campaign ID: #{campaign_id} |"
     if cpc.to_f > 0
@@ -33,19 +44,19 @@ module Reporters
     end
   end
 
-  def network_ad_tags_report(advertiser_id, advertiser_name, active_tags, creative_ids)
-    if advertiser_name==""
-      puts "Network ID: #{advertiser_id}"
-    else
-      puts "Network: #{advertiser_name}  ID: #{advertiser_id}"
-    end
-    puts "Count of active ad tags: #{active_tags.length}"
-
-    puts "Ad Tag IDS: #{active_tags.join(", ")}"
-    puts "Creative IDS (non-control): #{creative_ids.join(", ")}"
+  def network_ad_tags_report(hash)
+    puts "Network: #{hash[:network_name]}  ID: #{hash[:network_id]}"
+    puts "Count of active ad tags: #{hash[:active_ad_tags].length}"
+    puts "Ad Tag IDS: #{hash[:active_ad_tags].join(", ")}"
+    puts "Creative IDS (non-control): #{hash[:creative_ids].join(", ")}"
   end
 
-  def pixel_report(pixel_link, site_id, campaign_name, campaign_id, advertiser_id, event_time, pixel_log, ad_tag)
+  def pixel_report(pixel_link, hash, event_time, pixel_log, ad_tag)
+    site_id = hash['siteId']
+    campaign_name = hash['campaign_name']
+    campaign_id = hash['campaignId']
+    advertiser_id = hash['advertiserId']
+
     puts "\nPixel url: #{pixel_link}"
     print "Pixel log, prior to impression or success"
     if campaign_name != "control"
@@ -62,22 +73,24 @@ module Reporters
       pixel_hash = split_log(target_pixel_event.chomp, "pixel")
     rescue NoMethodError
       FBErrorMessages::Pixels.no_pixel_fired
-      return "bad data"
+      hash.store(:error, "bad data")
     end
     parse_pixel(pixel_hash, site_id, campaign_id, campaign_name, advertiser_id, ad_tag)
   end
 
-  def affiliate_redirect_report(log, hash, conversion_type, event_time)
-    affiliate = get_log(log)
-    affiliate_f = affiliate_filtrate(affiliate, event_time)
-    affiliate_hash = split_log(affiliate_f[:redirect][0], "affiliate_redirect")
-    puts ""
-    puts "Affiliate Redirect Entry:"
-    puts affiliate_f[:redirect]
-    begin
-      parse_affiliate(affiliate_hash, conversion_type, hash['siteId'], hash['campaignId'])
-    rescue NoMethodError
-      "bad data"
+  def affiliate_redirect_report(log, hash)
+    if hash[:affiliate] == 0 # Meaning we want to test an affiliate link
+      affiliate = get_log(log)
+      affiliate_f = affiliate_filtrate(affiliate, hash[:pixel_cutoff])
+      affiliate_hash = split_log(affiliate_f[:redirect][0], "affiliate_redirect")
+      puts ""
+      puts "Affiliate Redirect Entry:"
+      puts affiliate_f[:redirect]
+      begin
+        parse_affiliate(affiliate_hash, hash[:conv_type], hash['siteId'], hash['campaignId'])
+      rescue NoMethodError
+        hash.store(:error, "bad data")
+      end
     end
   end
 

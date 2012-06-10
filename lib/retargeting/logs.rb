@@ -1,4 +1,4 @@
-module LogManipulators
+module Logs
 
   # This method is used to filter out affiliate log events that you're not interested in.
   # It's like the "filtrate" method but it's needed because the affiliate log is unlike the other logs.
@@ -648,7 +648,7 @@ module LogManipulators
   end
 
   def calc_offset_time(global_offset, local_adjustment)
-    (Time.now.utc - global_offset - local_adjustment).strftime("%X")
+    (Time.now.utc - global_offset.to_i - local_adjustment).strftime("%X")
   end
 
-end # LogManipulators
+end

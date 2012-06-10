@@ -8,6 +8,7 @@ This script has one conversion blind spot: It does not test affiliate links with
 keyword campaigns.
 	
 =end
+TEST_TYPE = :rt
 require '../config/conversion_env'
 
 sites_hashes = get_general_test_data(10)

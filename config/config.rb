@@ -8,14 +8,14 @@ class FBConfig
                :test_site, :pixel_log, :imp_log, :impvar_log, :conversion_log,
                :affiliate_log, :product_log, :proxy_log, :pixel_log1, :imp_log1,
                :impvar_log1, :conversion_log1, :affiliate_log1, :product_log1,
-               :proxy_log1, :test_site_ip, :data_wiki, #:cookie_editor,
+               :proxy_log1, :test_site_ip, :data_wiki,
                :imp_seconds, :extra_imp_count
   )
 
   # Gets all the necessary test variables...
   @@config = YAML.load_file("#{File.dirname(__FILE__)}/config.yml")
 
-  def initialize(test_type)
+  def initialize
 
     @server = @@config['server']
     #@cookie_editor = @@config['cookie']
@@ -35,7 +35,7 @@ class FBConfig
       end
     end
 
-    unless test_type == :prod
+    unless TEST_TYPE == :prod
       check_if_testing_production
     end
 
@@ -142,9 +142,6 @@ class FBConfig
     @confluence_username = @@config['confluence_username']
     @confluence_password = @@config['confluence_password']
     @offset = @@config['offset'].to_i
-
-    #$sites_db = SQLite3::Database.open( "../lib/sites.db" )
-
     @imp_seconds = @@config['imp_viewing_time']
     @extra_imp_count = @@config['extra_imps']
 

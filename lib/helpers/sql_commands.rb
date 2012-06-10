@@ -97,7 +97,7 @@ module SQLCommands
     SITES_DB.execute(%|SELECT creativeId
                     FROM creative_data
                     WHERE siteId = "#{site_id}"
-                    AND campaignId = "#{camp_id}";|)
+                    AND campaignId = "#{camp_id}";|).flatten!
   end
 
   def campaign_from_creative(creative_id, as_hash=false)
@@ -136,9 +136,9 @@ module SQLCommands
                           WHERE campaignId = "#{campaign_id}");|)[0][0]
   end
 
-  def product_url_for_site(site_id, as_hash=false)
+  def product_urls_for_site(site_id, as_hash=false)
     SITES_DB.results_as_hash = as_hash
-    SITES_DB.execute(%|SELECT url, campaignId
+    urls = SITES_DB.execute(%|SELECT url, campaignId
                     FROM product_links
                     WHERE siteId != "#{site_id}";|)
   end
@@ -147,7 +147,7 @@ module SQLCommands
     SITES_DB.results_as_hash = as_hash
     SITES_DB.execute(%|SELECT networkAdTagId
                     FROM network_adtag_data
-                    WHERE campaignId = "#{campaign_id}";|)
+                    WHERE campaignId = "#{campaign_id}";|).flatten!
   end
 
   def ad_tag_ids_by_site_id(site_id, as_hash=false)
@@ -211,7 +211,7 @@ module SQLCommands
   end
 
   def site_ids_for_loyalty_camps(as_hash=false)
-  SITES_DB.results_as_hash = as_hash
+    SITES_DB.results_as_hash = as_hash
     SITES_DB.execute(%|SELECT DISTINCT siteId
                     FROM creative_data
                     WHERE campaignId
