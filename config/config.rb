@@ -123,27 +123,9 @@ class FBConfig
     $offset = @@config['offset'].to_i
     $imp_seconds = @@config['imp_viewing_time']
     $extra_imp_count = @@config['extra_imps']
+    $browser = @@config['browser']
+    $cookie_editor = @@config['cookie']
 
   end # initialize
-
-  # Creates a browser object...
-  def browser
-    b = Watir::Browser.new @@config['browser']
-    b.window.resize_to(1400,900)
-    b
-  end
-
-  def self.get parent, child=nil
-    parent = get_sub_tree @@config, parent
-    return child.nil? ? parent : get_sub_tree(parent, child)
-  end
-
-  private
-
-  def self.get_sub_tree root, item
-    sub_tree = root[item.to_s]
-    raise "Could not locate '#{item}' in YAML config: '#{root}'" if sub_tree.nil?
-    sub_tree
-  end
 
 end # Config

@@ -1,7 +1,7 @@
 
 class CookieEditor < GenericBasePage
 
-  page_url(FBConfig.get :cookie)
+  page_url($cookie_editor)
 
   element(:site_id) { |b| b.text_field id: "siteId" }
   element(:campaign_id) { |b| b.text_field id: "campaignId" }

@@ -11,7 +11,6 @@ keyword campaigns.
 TEST_TYPE = :rt
 require '../config/conversion_env'
 
-@browser = @config.browser
 test_data = get_general_test_data(10)
 #=begin
 test_data.each do |site|

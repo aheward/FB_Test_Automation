@@ -24,3 +24,6 @@ include Conversions
 include Reporters
 
 @config = FBConfig.new
+
+@browser = Watir::Browser.new $browser
+@browser.window.resize_to(1400,900)
