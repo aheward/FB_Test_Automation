@@ -193,7 +193,7 @@ module Reporters
   end
 
   def product_report(hash)
-    if hash["campaign_name"] =~ /dynamic/i
+    if hash["campaign_name"] =~ /^dynamic$/i
       puts ""
       puts "Product log:"
       prod = product_filtrate(hash[:product_log], hash[:pixel_cutoff])
