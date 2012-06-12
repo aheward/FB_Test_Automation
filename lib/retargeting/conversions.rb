@@ -5,28 +5,11 @@ module Conversions
 
     test_sites.each do | test_info |
       next if tested_sites.include? test_info["siteId"] # Line to ensure skipping a site if it's already been tested
-      #get_pixel_link(test_info)
-
-      # Make the string for the control cookie
-      test_info[:control_id] ? control = (test_info['abTestPerc'].to_i - 1) : control = (test_info['abTestPerc'].to_i)
-      fb_uid = %|#{"%02d" %(control)}|
-
-      #Create pixel link...
-      #pick_affiliate_or_regular(test_info)
-
-      #get ad tag data
-      #get_ad_tags_data(test_info)
-      #if test_info.data_error?
-      #  tested_sites << test_info["siteId"]
-      #  next
-      #end
-
-      #get_creatives_for_campaign(test_info)
 
       conversion_types.each do |conv_type|
 
         visit CookieEditor do |pg|
-          pg.set_control_cookie(fb_uid)
+          pg.set_control_cookie(test_info[:control_perc])
         end
         #@browser.dirty(test_info['siteId'], 1, 1)
         @browser.get_pixeled(test_info)
@@ -53,7 +36,7 @@ module Conversions
 
         # Success
         @browser.get_success(test_info)
-    #exit
+
         # Collect info from Conversion log, plus affiliate and product logs, if necessary...
         get_conversion_plus(test_info)
 

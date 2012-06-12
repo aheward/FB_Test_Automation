@@ -8,73 +8,18 @@ Things to do:
 - Refactor with RSpec and Test/Unit when there's time.
 
 =end
+TEST_TYPE = :rt
 require '../config/conversion_env'
 
-x_sites = $sites_db.get_site_ids_for_loyalty_camps
-x_sites.flatten!.sort!
-
-exclude_these_sites = BlacklistedSites.new.sites
-
-loyalty_sites = x_sites - exclude_these_sites
-
-test_sites = $sites_db.get_loyalty_site_date(loyalty_sites)
-
-# The following iterator grooms the test data...
-test_sites.each do | site |
-
-	campaigns = $sites_db.get_non_landing_campaign_data(site['siteId'])
-	campaigns.delete_if { |camp| camp["campaign_name"] == "success"}
-	campaigns.delete_if { |camp| camp["campaign_name"] == "control"}
-	campaigns.delete_if { |camp| camp["campaign_name"] =~ /opt.*out/i}
-	campaigns.delete_if { |camp| camp["campaign_name"] == "loyalty.campaign"}
-	
-	campaigns.shuffle!
-	
-	begin
-		site[:campaign_name] = campaigns[0]["campaign_name"]
-	rescue NoMethodError
-		site[:account_id] = 0
-		next
-	end
-	
-	site[:campaign_id] = campaigns[0]["campaignId"]
-	
-	site[:loyalty_id] = $sites_db.get_cpid_from_sid_and_cpname(site["siteId"], "loyalty.campaign")
-
-  site[:ad_tags] = $sites_db.get_ad_tags_for_campaign(campaigns[0]['campaignId'])
-  site[:ad_tags].flatten!
-	
-	if site[:ad_tags] == []
-		site[:account_id] = 0
-		next
-	end
-
-  site[:ad_tags].shuffle!
-
-	creatives = $sites_db.get_creatives_by_site_and_camp(site["siteId"], campaigns[0]['campaignId'])
-	creatives.flatten!
-	
-	site[:creatives] = creatives
-	
-	if site[:creatives] == []
-		site[:account_id] = 0
-		next
-	end
-	
-	site[:url] = get_link(site[:campaign_name], site["siteId"], site[:campaign_id], site["url"], site["revenueShare"])
-
-	site[:ad_tag_cpm] = $sites_db.get_network_cpm(site[:ad_tags][0])
-	
-	# Advertiser ID
-	site[:account_id] = $sites_db.get_account_id_for_site(site['siteId'])
-	
-end
-
-test_sites.delete_if { | site | site[:account_id] == 0 }
-
-@browser = @config.browser
-
-test_sites.shuffle!
+test_sites = get_loyalty_test_data(5)
+test_sites.each { |s|
+  p s['site_name']
+  p s['campaign_name']
+  p s[:url]
+  p s[:loyalty_id]
+  exit
+}
+exit
 
 conversion_type = [ 
 "dtc",

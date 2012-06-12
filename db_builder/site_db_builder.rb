@@ -11,13 +11,9 @@ they will usually contain bad characters.
 # coding: UTF-8
 #!/usr/bin/env ruby
 require '../config/env.rb'
-require '../lib/pixel_imp_conversions'
 Dir.chdir(File.dirname(__FILE__))
 
-@config = FBConfig.new(:rt)
-
-db = @config.sites_db
-#db.results_as_hash = true
+#SITES_DB.results_as_hash = true
 
 #Site Data...
 
@@ -31,7 +27,7 @@ end
 
 sites.delete_at(0)
 
-db.execute(%|DROP TABLE IF EXISTS site_data;|)
+SITES_DB.execute(%|DROP TABLE IF EXISTS site_data;|)
 
 sites_table_SQL =<<doof
 CREATE TABLE site_data (
@@ -69,7 +65,7 @@ CREATE TABLE site_data (
 );
 doof
 
-db.execute(sites_table_SQL)
+SITES_DB.execute(sites_table_SQL)
 
 sites.each do | line |
 	
@@ -84,11 +80,11 @@ sites.each do | line |
 		;	
 doof
 
-	db.execute(sql)
+	SITES_DB.execute(sql)
 
 end
 puts "Sites table done."
-puts db.execute(%|SELECT * FROM site_data WHERE siteId = '1327';|)
+puts SITES_DB.execute(%|SELECT * FROM site_data WHERE siteId = '1327';|)
 #=end
 #=begin
 # Campaign Data
@@ -99,7 +95,7 @@ File.open("campaign_data.csv").each do | line |
 	campaigns << line.chomp
 end
 
-db.execute(%|DROP TABLE IF EXISTS campaign_data;|)
+SITES_DB.execute(%|DROP TABLE IF EXISTS campaign_data;|)
 
 campaigns_table_SQL =<<doof
 CREATE TABLE campaign_data (
@@ -124,7 +120,7 @@ CREATE TABLE campaign_data (
 );
 doof
 
-db.execute(campaigns_table_SQL)
+SITES_DB.execute(campaigns_table_SQL)
 
 campaigns.each do | line |
 
@@ -144,12 +140,12 @@ campaigns.each do | line |
 		;	
 doof
 
-	db.execute(sql)
+	SITES_DB.execute(sql)
 
 end
 
 puts "Campaign table done."
-puts db.execute(%|SELECT * FROM campaign_data WHERE siteId = '1327';|)
+puts SITES_DB.execute(%|SELECT * FROM campaign_data WHERE siteId = '1327';|)
 
 # Network Ad Tag Data
 ad_tags = []
@@ -162,7 +158,7 @@ end
 
 ad_tags.delete_at(0)
 
-db.execute(%|DROP TABLE IF EXISTS network_adtag_data;|)
+SITES_DB.execute(%|DROP TABLE IF EXISTS network_adtag_data;|)
 
 adtag_table_SQL =<<doof
 CREATE TABLE network_adtag_data (
@@ -178,7 +174,7 @@ CREATE TABLE network_adtag_data (
 );
 doof
 
-db.execute(adtag_table_SQL)
+SITES_DB.execute(adtag_table_SQL)
 
 ad_tags.each do | line |
 	line.gsub!(%|,|, %|","|)
@@ -191,12 +187,12 @@ ad_tags.each do | line |
 		;	
 doof
 
-	db.execute(sql)
+	SITES_DB.execute(sql)
 
 end
 
 puts "Ad Tags table done."
-puts db.execute(%|SELECT * FROM network_adtag_data WHERE siteId = '1327';|)
+puts SITES_DB.execute(%|SELECT * FROM network_adtag_data WHERE siteId = '1327';|)
 #=end
 # Creative Data
 
@@ -208,7 +204,7 @@ File.open("creative_data.csv").each do | line |
 	
 end
 
-db.execute(%|DROP TABLE IF EXISTS creative_data;|)
+SITES_DB.execute(%|DROP TABLE IF EXISTS creative_data;|)
 
 creative_table_SQL =<<doof
 CREATE TABLE creative_data (
@@ -225,7 +221,7 @@ CREATE TABLE creative_data (
 );
 doof
 
-db.execute(creative_table_SQL)
+SITES_DB.execute(creative_table_SQL)
 
 creatives.each do | line |
 	
@@ -245,12 +241,12 @@ creatives.each do | line |
 		;	
 doof
 
-	db.execute(sql)
+	SITES_DB.execute(sql)
 
 end
 
 puts "Creatives table done."
-puts db.execute(%|SELECT * FROM creative_data WHERE siteId = '1327';|)
+puts SITES_DB.execute(%|SELECT * FROM creative_data WHERE siteId = '1327';|)
 
 #=end
 # VTC Merit Data
@@ -265,7 +261,7 @@ end
 
 merit.delete_at(0)
 
-db.execute(%|DROP TABLE IF EXISTS vt_merit_data;|)
+SITES_DB.execute(%|DROP TABLE IF EXISTS vt_merit_data;|)
 
 merit_table_SQL =<<doof
 CREATE TABLE vt_merit_data (
@@ -275,7 +271,7 @@ CREATE TABLE vt_merit_data (
 );
 doof
 
-db.execute(merit_table_SQL)
+SITES_DB.execute(merit_table_SQL)
 
 merit.each do | line |
 	line.gsub!(%|,|, %|","|)
@@ -288,12 +284,12 @@ merit.each do | line |
 		;	
 doof
 
-	db.execute(sql)
+	SITES_DB.execute(sql)
 
 end
 
 puts "Merit table done."
-puts db.execute(%|SELECT * FROM vt_merit_data WHERE siteId = '1327';|)
+puts SITES_DB.execute(%|SELECT * FROM vt_merit_data WHERE siteId = '1327';|)
 
 #=end
 #=begin
@@ -309,7 +305,7 @@ end
 
 keywords.delete_at(0)
 
-db.execute(%|DROP TABLE IF EXISTS keywords;|)
+SITES_DB.execute(%|DROP TABLE IF EXISTS keywords;|)
 
 keyword_table_SQL =<<doof
 CREATE TABLE keywords (
@@ -320,7 +316,7 @@ CREATE TABLE keywords (
 );
 doof
 
-db.execute(keyword_table_SQL)
+SITES_DB.execute(keyword_table_SQL)
 
 keywords.each do | line |
 	line.gsub!(%|,|, %|","|)
@@ -333,7 +329,7 @@ keywords.each do | line |
 		;	
 doof
 
-	db.execute(sql)
+	SITES_DB.execute(sql)
 
 end
 
@@ -342,9 +338,9 @@ ALTER TABLE keywords
 ADD COLUMN full_keyword BLOB;
 doof
 
-db.execute(update_sql)
+SITES_DB.execute(update_sql)
 
-camp_ids = db.execute(%|SELECT DISTINCT campaignId FROM keywords;|).flatten!
+camp_ids = SITES_DB.execute(%|SELECT DISTINCT campaignId FROM keywords;|).flatten!
 
 camp_ids.each do | id |
 
@@ -352,7 +348,7 @@ camp_ids.each do | id |
 	SELECT GROUP_CONCAT(keyword, "+"), checksum FROM keywords WHERE campaignId = '#{id}' GROUP BY checksum;
 goof
 
-	keys = db.execute(keys_sql)
+	keys = SITES_DB.execute(keys_sql)
 	keys.delete_if { | key | key[1] == "" }
 	
 	keys.each do | key |
@@ -369,16 +365,16 @@ goof
 				;
 doof
 		
-		db.execute(full_kw_sql)
+		SITES_DB.execute(full_kw_sql)
 		
 	end
 
 end
 
 puts "Keywords table done."
-db.results_as_hash = true
-p db.execute(%|SELECT * FROM keywords WHERE siteId = '2187';|)
-db.results_as_hash = false
+SITES_DB.results_as_hash = true
+p SITES_DB.execute(%|SELECT * FROM keywords WHERE siteId = '2187';|)
+SITES_DB.results_as_hash = false
 
 # Products...
 #=begin
@@ -395,7 +391,7 @@ end
 #products.delete_at(0)
 #=begin
 
-db.execute(%|DROP TABLE IF EXISTS product_links;|)
+SITES_DB.execute(%|DROP TABLE IF EXISTS product_links;|)
 
 table_SQL =<<goof
 CREATE TABLE product_links (
@@ -405,7 +401,7 @@ CREATE TABLE product_links (
 );
 goof
 
-db.execute(table_SQL)
+SITES_DB.execute(table_SQL)
 #=end
 
 products.each do | line |
@@ -418,10 +414,10 @@ products.each do | line |
 		;	
 doof
 
-	db.execute(products_SQL)
+	SITES_DB.execute(products_SQL)
 
 end
 
 puts "Products links done."
-puts db.execute(%|SELECT * FROM product_links WHERE siteId = '1327';|)
+puts SITES_DB.execute(%|SELECT * FROM product_links WHERE siteId = '1327';|)
 #=end

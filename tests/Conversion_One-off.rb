@@ -19,5 +19,6 @@ pixel_page = ""
 TEST_TYPE = :rt
 require '../config/conversion_env'
 test_site = data_for_a_campaign(campaign_name, test_site)
+set_up_one_site(test_site[0])
 
-regression_conversion_test(@config, test_site, [conversion_type])
+regression_conversion_test(test_site, [conversion_type])

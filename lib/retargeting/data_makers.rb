@@ -4,6 +4,7 @@ module DataMakers
     test_sites = get_generic_test_sites(count)
     test_sites.each do |site|
       get_good_campaign_data(site)
+      add_control_perc(site)
     end
     clean_up(test_sites, count)
   end
@@ -14,6 +15,7 @@ module DataMakers
       campaigns = non_zero_campaign_data(site_hash['siteId'])
       campaigns.delete_if { |item| item["campaign_name"] != "landing" }
       add_camp_to_site(site_hash, campaigns)
+      add_control_perc(site)
     end
     clean_up(test_sites, count)
   end
@@ -24,6 +26,7 @@ module DataMakers
       campaigns = non_zero_campaign_data(site_hash['siteId'])
       campaigns.delete_if { |item| item["campaign_name"] != "dynamic" }
       add_camp_to_site(site_hash, campaigns)
+      add_control_perc(site)
     end
     clean_up(test_sites, count)
   end
@@ -35,16 +38,39 @@ module DataMakers
       campaigns.delete_if { |item| item["campaign_name"] =~ /abandon/i }
       campaigns.keep_if { |item| item["campaign_name"] != "dynamic" && item["campaign_name"] != "Dynamic" && item["campaign_name"] != "landing" && item["campaign_name"] != "control" && item["campaign_name"] != "loyalty.campaign" }
       add_camp_to_site(site_hash, campaigns)
+      add_control_perc(site)
     end
     clean_up(test_sites, count)
   end
 
   def get_loyalty_test_data(count)
-
+    @blacklist = BlacklistedSites.new.sites
+    loyalty_sites = sites_with_loyalty_camps
+    loyalty_sites.flatten!
+    loyalty_sites.delete_if { |item| @blacklist.include?(item) }
+    test_sites = site_data(loyalty_sites)
+    test_sites.each do |site|
+      get_good_campaign_data(site)
+      # Control campaign ID
+      site[:loyalty_id] = cpid_from_sid_and_cpname(site["siteId"], "loyalty.campaign")
+      add_control_perc(site)
+    end
+    clean_up(test_sites, count)
   end
 
   def get_merit_test_data(count)
-
+    @blacklist = BlacklistedSites.new.sites
+    test_sites = get_sites_by_window
+    test_sites << get_sites_by_pricing
+    test_sites.flatten!.compact!
+    test_sites.delete_if { |item| @blacklist.include?(item) }
+    test_sites.shuffle!
+    sites_hashes = site_data(test_sites)
+    sites_hashes.each do |site|
+      get_good_campaign_data(site)
+      add_control_perc(site)
+    end
+    clean_up(sites_hashes, count)
   end
 
   def get_control_test_data(count)
@@ -54,11 +80,27 @@ module DataMakers
     control_sites.delete_if { |item| @blacklist.include?(item) }
     test_sites = site_data(control_sites)
     test_sites.each do |site|
-      get_good_campaign_data(site['siteId'])
+      get_good_campaign_data(site)
       # Control campaign ID
       site[:control_id] = control_camp_id(site['siteId'])
+      add_control_perc(site)
     end
     clean_up(test_sites, count)
+  end
+
+  def set_up_one_site(site_hash)
+    get_ad_tags_data(site_hash)
+    if site_hash.data_error?
+      site_hash[:account_id] = 0
+    end
+
+    site_hash[:creative_ids] = creatives_by_site_and_camp(site_hash["siteId"], site_hash["campaignId"])
+    if site_hash[:creative_ids] == []
+      site_hash[:account_id] = 0
+    end
+
+    site_hash[:url] = get_pixel_link(site_hash)
+    pick_affiliate_or_regular(site_hash)
   end
 
   private
@@ -121,18 +163,11 @@ module DataMakers
       site_hash[:account_id] = 0
     end
 
-    get_ad_tags_data(site_hash)
-    if site_hash.data_error?
-      site_hash[:account_id] = 0
-    end
+    set_up_one_site(site_hash)
+  end
 
-    site_hash[:creative_ids] = creatives_by_site_and_camp(site_hash["siteId"], site_hash["campaignId"])
-    if site_hash[:creative_ids] == []
-      site_hash[:account_id] = 0
-    end
-
-    site_hash[:url] = get_pixel_link(site_hash)
-    pick_affiliate_or_regular(site_hash)
+  def add_control_perc(test_site)
+    test_site[:control_id] ? test_site[:control_perc] == %|#{"%02d" %((site['abTestPerc'].to_i - 1))}| : test_site[:control_perc] == %|#{"%02d" %((site['abTestPerc'].to_i))}|
   end
 
   def clean_up(sites_hashes, count)

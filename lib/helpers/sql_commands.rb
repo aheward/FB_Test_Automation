@@ -218,7 +218,7 @@ module SQLCommands
                     WHERE siteId = "#{site_id}";|)[0][0]
   end
 
-  def site_ids_for_loyalty_camps(as_hash=false)
+  def sites_with_loyalty_camps(as_hash=false)
     SITES_DB.results_as_hash = as_hash
     SITES_DB.execute(%|SELECT DISTINCT siteId
                     FROM creative_data

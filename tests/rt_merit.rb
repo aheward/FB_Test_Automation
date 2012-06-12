@@ -1,14 +1,15 @@
 #!/usr/bin/env ruby
+TEST_TYPE = :rt
 require '../config/conversion_env'
 
-include MeritMethods
-
-sites_hashes = get_general_test_data(10)
-
-tested_sites = []
-
-@browser = @config.browser
-
+test_sites = get_merit_test_data(10)
+test_sites.each { |s|
+  p s['site_name']
+  p s['campaign_name']
+  p s[:url]
+}
+exit
+=begin
 visit CookieEditor do |p|
   p.set_control_cookie("99")
 end
@@ -138,3 +139,4 @@ doof
   offset_count += 1
 	
 end
+=end
