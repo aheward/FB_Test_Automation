@@ -12,16 +12,5 @@ TEST_TYPE = :rt
 require '../config/conversion_env'
 
 test_data = get_general_test_data(10)
-#=begin
-test_data.each do |site|
-  @browser.goto site[:url]
-  sleep 2
 
-end
-@browser.show_cookies
-puts @browser.unique_identifier
-
-exit
-#=end
-
-regression_conversion_test(@config, test_data, CONVERSIONS)
+regression_conversion_test(test_data, CONVERSIONS)

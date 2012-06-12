@@ -115,6 +115,9 @@ module Pixel
 
     end
     hash.store(:actual_pixel_url, pixel_link)
+    self.goto DUMMY_PAGE
+    $unique_id = self.unique_identifier
+    puts $unique_id
   end
 
   def get_success(hash)

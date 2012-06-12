@@ -8,26 +8,20 @@ class Fido
     @config = YAML.load_file("../config/config.yml")
     @server = @config['server']
 
-    if @server == 'prod' && TEST_TYPE == :rt
-      puts "This script is for testing dev boxes. Change your config to point away from production."
-      exit
-    elsif @server != 'prod' && TEST_TYPE == :prod
-      puts "This script is for testing production. Fix your config file."
-      exit
-    end
+    raise "This script is for testing dev boxes. Change your config to point away from production." if @server == 'prod' && TEST_TYPE != :prod
+    raise "This script is for testing production. Fix your config file." if @server != 'prod' && TEST_TYPE == :prod
 
     @user_name = @config['fido_username']
     @password = @config['fido_password']
     @browser = Watir::Browser.new @config['browser']
     @browser.window.resize_to(1400,900)
 
-    case(@server)
-      when 'prod'
-        @browser.goto "www.fetchback.com/fido"
-      when 'qa-fido'
-        @browser.goto "qa-fido.fetchback.com/fido"
-      else
-        @browser.goto "#{@server}.fetchback.com/fido"
+    fido = ".fetchback.com/fido"
+
+    if @server == 'prod'
+      @browser.goto("www" + fido)
+    else
+      @browser.goto(@server + fido)
     end
 
     @test_data = YAML.load_file("../lib/fido_test_data.yml")

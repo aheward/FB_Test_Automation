@@ -123,4 +123,20 @@ module FBErrorMessages
 
   end
 
+  module Settings
+
+    def self.config_prod_reg_test
+      "Your config file is set to test production.\nHowever, you appear to be running a script made for\nregression testing. Please fix this."
+    end
+
+    def self.hosts_is_prod
+      "You must point your Hosts file away from production!"
+    end
+
+    def self.no_config_yml
+      "You need a config.yml file in your config folder!"
+    end
+
+  end
+
 end

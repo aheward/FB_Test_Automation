@@ -21,4 +21,9 @@ module FetchBackConstants
   # Prefix for pixel links...
   PIXEL_SERVER = "http://pixel.fetchback.com/serve/fb/"
 
+  # An empty page on the fetchback domain. This
+  # is necessary so that the scripts can easily
+  # retrieve the fetchback cookies...
+  DUMMY_PAGE = "http://pixel.fetchback.com/timeout.html"
+
 end

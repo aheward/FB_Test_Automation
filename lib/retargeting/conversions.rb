@@ -1,8 +1,6 @@
 module Conversions
 
-  def regression_conversion_test(config, test_sites, conversion_types)
-    @config = config
-    @browser = @config.browser
+  def regression_conversion_test(test_sites, conversion_types)
     tested_sites = []
 
     test_sites.each do | test_info |

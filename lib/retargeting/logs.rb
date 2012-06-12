@@ -50,7 +50,7 @@ module Logs
     end
 
     log.each_line do | log_entry |
-      if log_entry.include?($local_ip)# @browser.unique_identifier)
+      if log_entry.include?($unique_id)
         items_i_did << log_entry
       end
     end

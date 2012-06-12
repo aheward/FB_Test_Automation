@@ -1,7 +1,7 @@
 
 class CookieEditor < GenericBasePage
 
-  page_url($cookie_editor)
+  page_url(FBConfig.get :cookie)
 
   element(:site_id) { |b| b.text_field id: "siteId" }
   element(:campaign_id) { |b| b.text_field id: "campaignId" }
@@ -57,7 +57,7 @@ module FetchBackCookies
   # the version and timestamp prefix. Use with the
   # browser object.
   def unique_identifier
-    self.uid[/(?<=_)\d+:\d+$/]
+    self.uid[:value][/(?<=_)\d+:\d+$/]
   end
 
   private

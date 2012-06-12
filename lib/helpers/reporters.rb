@@ -223,6 +223,7 @@ module Reporters
   end
 
   def show_cookies
+    self.goto DUMMY_PAGE
     browser_cookies = self.cookies.to_a
     expires = browser_cookies[0][:expires]
     puts
