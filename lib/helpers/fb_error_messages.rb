@@ -22,12 +22,12 @@ module FBErrorMessages
       puts "there's a bug, here."
     end
 
-    def self.missing_affiliate_event(pixel_url, afl_log1, afl_log2)
+    def self.missing_affiliate_event(pixel_url)
       puts "Expected log event missing!\nCheck that the pixel event fired,\nthat the right pixel was used,\nand whether the affiliate log has expected contents."
       puts "\n\nPixel URL used: #{pixel_url}\n\n"
       puts "Link(s) to your Affiliate log(s):"
-      puts afl_log1
-      puts afl_log2
+      puts $affiliate_log
+      puts $affiliate_log1
     end
 
     def self.unable_to_open_log_file(log)

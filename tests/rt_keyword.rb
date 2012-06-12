@@ -4,8 +4,9 @@
 Tests the DTC, CTC, and VTC conversions for landing campaigns.
 
 =end
+TEST_TYPE = :rt
 require '../config/conversion_env'
 
-sites_hashes = get_keyword_test_data(10)
+test_data = get_keyword_test_data(10)
 
-regression_conversion_test(@config, sites_hashes)
+regression_conversion_test(@config, test_data, CONVERSIONS)

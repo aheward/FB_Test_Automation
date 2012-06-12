@@ -1,49 +1,69 @@
 module Impressions
 
   def get_ad_tags_data(hash)
-    hash[:active_ad_tags] = ad_tags_for_campaign(hash["campaignId"])
     begin
+      hash[:active_ad_tags] = ad_tags_for_campaign(hash["campaignId"])
       hash[:active_ad_tags].shuffle!
       hash[:test_tag] = hash[:active_ad_tags][0]
       hash[:test_tag_data] = ad_tag_data(hash[:test_tag])
-    rescue NoMethodError
-      FBErrorMessages::Imps.no_active_tags
-      hash.store(:error, "no tags")
-    end
-    begin
       hash.store(:ad_tag_cpm, hash[:test_tag_data][0])
       hash.store(:network_name, hash[:test_tag_data][1])
       hash.store(:network_id, hash[:test_tag_data][2])
     rescue NoMethodError
-      FBErrorMessages::Sites.missing_data
-      hash.store(:error, "no ad tag cpm")
+      hash[:account] = 0
     end
   end
 
-  def get_impified(viewing_seconds, extra_ad_count, hash)
+  def get_creatives_for_campaign(hash)
+    hash.store(:creative_ids, creatives(hash['campaignId']))
+  end
+
+  def get_impified(hash)
     unless hash[:conv_type] == "dtc" || hash[:conv_type] == "otc"
       active_tags = hash[:active_ad_tags]
       creative = tagify(hash[:test_tag])
 
-      if extra_ad_count >= active_tags.length
+      if $extra_imp_count >= active_tags.length
         count = active_tags.length - 1
       else
-        count = extra_ad_count
+        count = $extra_imp_count
       end
       unless count == 0
         1.upto(count) do |x|
           self.goto(tagify(active_tags[x]))
-          sleep viewing_seconds
+          sleep $imp_seconds
         end
       end
-      hash[:imp_cutoff] = calc_offset_time((FBConfig.get :offset), 3)
+      sleep 2 # Some extra time to help separate test event from dummies
+      hash[:imp_cutoff] = calc_offset_time(3)
       self.goto(creative)
-      sleep(viewing_seconds)
+      sleep $imp_seconds
       puts "Impression link: #{creative}"
       if hash[:conv_type] =~ /ctc/i
         click = self.clicktrack(hash[:url])
         self.goto(click)
         puts "Clicktracking link: #{click}"
+      end
+      get_imp_log(hash)
+      hash[:imp_array] = filtrate(hash[:raw_imp_log], hash[:imp_cutoff])
+
+      # Here's hoping the ad tag we want is there...
+      target = hash[:imp_array].keep_if { |line| line =~ /\t#{hash[:test_tag]}\t/}
+
+      # fallback...
+      generic = hash[:imp_array].find { | line | line =~ /\timp\t/ }
+
+      if target.length == 0
+        imp_line = generic
+      else
+        imp_line = target[0]
+      end
+
+      begin
+        hash.store(:split_imp_log, split_log(imp_line.chomp, "impression"))
+      rescue NoMethodError
+        FBErrorMessages::Imps.no_imp_event
+        hash.store(:error, "bad data")
       end
     end
   end

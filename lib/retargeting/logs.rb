@@ -50,7 +50,7 @@ module Logs
     end
 
     log.each_line do | log_entry |
-      if log_entry.include?($local_ip)
+      if log_entry.include?($local_ip)# @browser.unique_identifier)
         items_i_did << log_entry
       end
     end
@@ -59,7 +59,7 @@ module Logs
 
     items_i_did.each do | log_entry |
       log_entry_time = log_entry[16..24]
-      if log_entry_time > cutoff_time
+      if log_entry_time >= cutoff_time
         the_items_we_want << log_entry
       end
     end
@@ -107,9 +107,13 @@ module Logs
   end
 
   def get_pixel_log(hash)
-    hash[:raw_pixel_log] = get_log($pixel_log)
+    hash.store(:raw_pixel_log, get_log($pixel_log))
   end
-  
+
+  def get_imp_log(hash)
+    hash.store(:raw_imp_log, get_log($imp_log))
+  end
+
   def get_conversion_plus(hash)
     hash[:conversion_log] = get_log($conversion_log)
     hash[:afl_conv_log] = ""
@@ -137,7 +141,9 @@ module Logs
   end
 
   # TODO - Add support for campaign ID.
-  def parse_affiliate(affiliate_hash, conversion, site_id, campaign_id)
+  def parse_affiliate(affiliate_hash, hash)
+    conversion = hash[:conv_type]
+    site_id = hash['siteId']
     # This method takes an affiliate log event (that's been converted into a hash via the split_log method)
     # and evaluates whether or not the event has the expected attributes, based on what was tested.
 
@@ -167,8 +173,13 @@ module Logs
 
   # This method takes the hash of the conversion log (made using the split_log method)
   # and checks that the event matches expectations by comparing it to all the other data passed into it.
-  def parse_conversion(conversion_hash, conversion_type, pixel_hash, imp_hash, campaign_id, site_id, merit30= -1, merit7=50, merit3=25, merit1=5)
-
+  def parse_conversion(hash, merit30= -1, merit7=50, merit3=25, merit1=5)
+    conversion_hash = hash[:conversion_hash]
+    conversion_type = hash[:conv_type]
+    pixel_hash= hash[:success_pixel_hash]
+    imp_hash = hash[:split_imp_log]
+    campaign_id = hash['campaignId']
+    site_id = hash['siteId']
     #p conversion_hash
 
     puts "Latest impression time: #{Time.at(conversion_hash[:latest_imp_time].to_i)}" if conversion_hash[:latest_imp_time].to_i != 0
@@ -276,9 +287,12 @@ module Logs
 
     case
       when imp_hash[:event] == "imp"
-
-        creative_campaign_id = campaign_from_creative(imp_hash[:creative_id])
-        camp_name = $sites_db.execute(%|SELECT name FROM campaign_data WHERE campaignId = "#{creative_campaign_id}";|)[0][0]
+        begin
+          creative_campaign_id = campaign_from_creative(imp_hash[:creative_id])
+          camp_name = camp_name_by_camp_id(creative_campaign_id)
+        rescue
+          camp_name = ""
+        end
         if camp_name != ""
           spb = spb_for_campaign(creative_campaign_id)
         else
@@ -334,9 +348,14 @@ module Logs
 
   def parse_pixel(pixel_hash, hash, adtag_id=0)
     site_id = hash['siteId']
-    campaign_id = hash['campaignId']
-    campaign_name = hash['campaign_name']
-    account_id = hash[:network_id]
+    if hash[:control_id] ==nil
+      campaign_id = hash['campaignId']
+      campaign_name = hash['campaign_name']
+    else
+      campaign_name = "control"
+      campaign_id = hash[:control_id]
+    end
+    account_id = hash['advertiserId']
     # This method takes the hash of the pixel log (made via the split_log method)
     # and compares it to the rest of the passed information, evaluating whether or not the event's
     # attributes match what's expected.
@@ -672,7 +691,7 @@ module Logs
   end
 
   def calc_offset_time(local_adjustment)
-    (Time.now.utc - (FBConfig.get :offset).to_i - local_adjustment).strftime("%X")
+    (Time.now.utc - $offset.to_i - local_adjustment).strftime("%X")
   end
 
 end

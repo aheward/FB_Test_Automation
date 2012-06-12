@@ -11,6 +11,18 @@ keyword campaigns.
 TEST_TYPE = :rt
 require '../config/conversion_env'
 
-sites_hashes = get_general_test_data(10)
+@browser = @config.browser
+test_data = get_general_test_data(10)
+#=begin
+test_data.each do |site|
+  @browser.goto site[:url]
+  sleep 2
 
-regression_conversion_test(@config, sites_hashes, CONVERSIONS)
+end
+@browser.show_cookies
+puts @browser.unique_identifier
+
+exit
+#=end
+
+regression_conversion_test(@config, test_data, CONVERSIONS)

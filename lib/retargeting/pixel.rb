@@ -79,7 +79,10 @@ module Pixel
     campaign_name = hash["campaign_name"]
     campaign_id = hash["campaignId"]
     site_id =  hash["siteId"]
-    hash[:pixel_cutoff] = calc_offset_time((FBConfig.get :offset), 2)
+    hash[:pixel_cutoff] = calc_offset_time(1)
+
+    puts hash[:pixel_cutoff]
+
     self.goto(pixel_link)
     sleep 3 if pixel_link =~ /afl;afc\=/ # Wait extra time for redirect when using affiliate link.
     sleep 2 # Have to wait until pixel should have fired
@@ -114,18 +117,18 @@ module Pixel
     hash.store(:actual_pixel_url, pixel_link)
   end
 
-  def get_success(hash, log)
-    hash[:success_cutoff] = calc_offset_time((FBConfig.get :offset), 2)
+  def get_success(hash)
+    hash[:success_cutoff] = calc_offset_time(2)
     if rand(15) > 0
       crv = "#{rand(500)}"+".#{rand(10)}"+"#{rand(10)}"
     else
       crv = (rand(100) + 1).to_s
     end
     oid = random_nicelink(16)
-    success_link = "http://pixel.fetchback.com/serve/fb/pdj?cat=#{random_nicelink}&name=success&sid=#{site_id}" + "&crv=#{crv}" + "&oid=#{oid}"
+    success_link = "#{PIXEL_SERVER}pdj?cat=#{random_nicelink}&name=success&sid=#{hash['siteId']}" + "&crv=#{crv}" + "&oid=#{oid}"
     self.goto(success_link)
     sleep(2)
-    hash.store(:success_pixel_log, get_log(log))
+    hash.store(:success_pixel_log, get_log($pixel_log))
     hash.store(:success_data, {:link=>success_link, :crv=>crv, :oid=>oid})
   end
 
@@ -136,8 +139,8 @@ module Pixel
 
         code = FetchBack.encode_affiliate_param(site_id, 'PPJ1')
 
-    pepperjam_url_1 = "http://pixel.fetchback.com/serve/fb/afl?afc=PPJ1&afx=#{code}&afu="
-    pepperjam_url_2 = "http://pixel.fetchback.com/serve/fb/afl;afc=PPJ1,afx=#{code},afu="
+    pepperjam_url_1 = "#{PIXEL_SERVER}afl?afc=PPJ1&afx=#{code}&afu="
+    pepperjam_url_2 = "#{PIXEL_SERVER}afl;afc=PPJ1,afx=#{code},afu="
 
     # Pick which one to use...
     z = rand(2)

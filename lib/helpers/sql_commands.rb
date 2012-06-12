@@ -107,8 +107,15 @@ module SQLCommands
                     FROM creative_data
                     WHERE creativeId = "#{creative_id}";|)[0][0]
     rescue
-      puts "Unable to find the campaign associated with this creative: #{creative_id}!!"
+      puts "---WARNING: Unable to find the campaign associated with this creative: #{creative_id}!!"
     end
+  end
+
+  def camp_name_by_camp_id(camp_id, as_hash=false)
+    SITES_DB.results_as_hash = as_hash
+    SITES_DB.execute(%|SELECT name
+                        FROM campaign_data
+                        WHERE campaignId = "#{camp_id}";|)[0][0]
   end
 
   def cpid_from_sid_and_cpname(site_id, camp_name, as_hash=false)
@@ -174,10 +181,11 @@ module SQLCommands
 
   def control_site_data(control_sites, as_hash=true)
     SITES_DB.results_as_hash = as_hash
-    SITES_DB.execute(%|SELECT siteId, name site_name, url, cpa, cpe, cpm, cpc, revenueShare, abTestPerc
-	                  FROM site_data
-	                  WHERE siteId
-	                  IN (#{control_sites.join(", ")});|)
+    SITES_DB.execute(%|SELECT siteId, name site_name, url, cpa, cpe, cpm, cpc,
+                              revenueShare, abTestPerc, advertiserId
+	                      FROM site_data
+	                      WHERE siteId
+	                      IN (#{control_sites.join(", ")});|)
   end
 
   def control_camp_id(site_id, as_hash=false)

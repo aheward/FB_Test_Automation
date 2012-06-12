@@ -4,75 +4,32 @@
 Tests the Control Campaign on the test sites.
 
 =end
+TEST_TYPE = :rt
 require '../config/conversion_env'
 
-control_sites = $sites_db.get_sites_with_control_camps
-control_sites.flatten!.sort!
+p $test_site
+p $test_site_ip
+p $pixel_log
+p $imp_log
+p $impvar_log
+p $conversion_log
+p $affiliate_log
+p $product_log
+p $proxy_log
+p $pixel_log1
+p $imp_log1
+p $impvar_log1
+p $conversion_log1
+p $affiliate_log1
+p $product_log1
+p $proxy_log1
 
-test_sites = $sites_db.get_control_site_data(control_sites)
-
+test_sites = get_control_test_data(10)
+p test_sites
+regression_conversion_test(@config, test_sites, %w{vtc})
+exit
 test_sites.each do | site |
 
-	campaigns = $sites_db.get_non_landing_campaign_data(site['siteId'])
-
-	campaigns.delete_if { |camp| camp["campaign_name"] == "success"}
-	campaigns.delete_if { |camp| camp["campaign_name"] == "control"}
-	campaigns.delete_if { |camp| camp["campaign_name"] =~ /opt.*out/i}
-	campaigns.delete_if { |camp| camp["campaign_name"] == "loyalty.campaign"}
-	
-	campaigns.shuffle!
-	begin
-		site[:campaign_name] = campaigns[0]["campaign_name"]
-	rescue NoMethodError
-		site[:account_id] = 0
-		next
-	end
-
-	active_ad_tags = $sites_db.get_ad_tags_for_campaign(campaigns[0]['campaignId'])
-	active_ad_tags.flatten!
-	
-	if active_ad_tags == []
-		site[:account_id] = 0
-		next
-	end
-	
-	active_ad_tags.shuffle!
-	site[:ad_tags] = active_ad_tags
-
-	creatives = $sites_db.get_creatives_by_site_and_camp(site["siteId"], campaigns[0]['campaignId'])
-	creatives.flatten!
-	
-	site[:creatives] = creatives
-	
-	if site[:creatives] == []
-		site[:account_id] = 0
-		next
-	end
-	
-	site[:url] = get_link(site[:campaign_name], site["siteId"], campaigns[0]['campaignId'], site["url"], site["revenueShare"])
-
-	site[:ad_tag_cpm] = $sites_db.get_network_cpm(site[:ad_tags][0])
-	
-	# Control campaign ID
-	site[:control_id] = $sites_db.get_control_camp_id(site['siteId'])
-	
-	# Advertiser ID
-	site[:account_id] = $sites_db.get_account_id_for_site(site['siteId'])
-
-end
-
-blacklist = BlacklistedSites.new.sites
-
-test_sites.delete_if { | site | site[:account_id] == 0 }
-test_sites.delete_if { | site | blacklist.include?(site['siteId']) }
-
-browser = @config.browser
-
-test_sites.shuffle!
-
-test_sites.each do | site |
-
-	next if site == {}
 
 	browser.goto(@config.cookie_editor)
 	fb_uid = "%02d" %(site['abTestPerc'].to_i - 1) # Code to make sure there's always a leading zero for single digits.

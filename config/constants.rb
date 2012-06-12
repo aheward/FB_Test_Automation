@@ -18,4 +18,7 @@ module FetchBackConstants
   # Direct/Organic conversion offsets
   CONVERSION_OFFSETS = [ 7175, 7200 ]
 
+  # Prefix for pixel links...
+  PIXEL_SERVER = "http://pixel.fetchback.com/serve/fb/"
+
 end

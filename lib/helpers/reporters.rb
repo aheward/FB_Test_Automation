@@ -4,8 +4,13 @@ module Reporters
   def conversion_report_header(hash)
     site_name = hash['site_name']
     site_id = hash['siteId']
-    campaign_name =hash['campaign_name']
-    campaign_id = hash['campaignId']
+    if hash[:control_id] == nil
+      campaign_name = hash['campaign_name']
+      campaign_id = hash['campaignId']
+    else
+      campaign_name = "control"
+      campaign_id = hash[:control_id]
+    end
     cpc = hash['cpc']
     cpm = hash['cpm']
     cpa = hash['cpa']
@@ -78,108 +83,83 @@ module Reporters
     end
   end
 
-  def affiliate_redirect_report(log, hash)
+  def affiliate_redirect_report(hash)
     if hash[:affiliate] == 0 # Meaning we want to test an affiliate link
-      affiliate = get_log(log)
+      affiliate = get_log($affiliate_log)
       affiliate_f = affiliate_filtrate(affiliate, hash[:pixel_cutoff])
       affiliate_hash = split_log(affiliate_f[:redirect][0], "affiliate_redirect")
       puts ""
       puts "Affiliate Redirect Entry:"
       puts affiliate_f[:redirect]
       begin
-        parse_affiliate(affiliate_hash, hash[:conv_type], hash['siteId'], hash['campaignId'])
+        parse_affiliate(affiliate_hash, hash)
       rescue NoMethodError
         hash.store(:error, "bad data")
       end
     end
   end
 
-  def affiliate_conversion_report(log, event_time, site_id, campaign_id, conversion_type)
-    puts ""
-    puts "Affiliate Conversion Entry:"
-    afl_conv_log = affiliate_filtrate(log, event_time)
-    puts afl_conv_log[:conversion]
-    afl_conv_hash = split_log(afl_conv_log[:conversion][-1], "affiliate_conversion")
-    parse_affiliate(afl_conv_hash, conversion_type, site_id, campaign_id)
+  def affiliate_conversion_report(hash)
+    if hash[:affiliate] == 0
+      puts ""
+      puts "Affiliate Conversion Entry:"
+      afl_conv_log = affiliate_filtrate(hash[:afl_conv_log], hash[:success_cutoff])
+      puts afl_conv_log[:conversion]
+      afl_conv_hash = split_log(afl_conv_log[:conversion][-1], "affiliate_conversion")
+      parse_affiliate(afl_conv_hash, hash)
+    end
   end
 
-  def impression_report(log, hash)
-    event_time = hash[:imp_cutoff]
-    conversion_type = hash[:cov_type]
-
+  def impression_report(hash)
     # get impression log data...
-    unless conversion_type == 'dtc' || conversion_type == 'otc'
-      imp = get_log(log)
-      imp_array = filtrate(imp, event_time)
+    unless hash[:conv_type] == 'dtc' || hash[:conv_type] == 'otc'
 
-      # Here's hoping the ad tag we want is there...
-      target = imp_array.keep_if { |line| line =~ /\t#{hash[:test_tag]}\t/}
-
-      # fallback...
-      generic = imp_array.find { | line | line =~ /\timp\t/ }
-
-      if target.length == 0
-        imp_line = generic
-      else
-        imp_line = target[0]
-      end
-
-      begin
-        split_imp_log = split_log(imp_line.chomp, "impression")
-        hash.store(:split_imp_log, split_imp_log)
-      rescue NoMethodError
-        FBErrorMessages::Imps.no_imp_event
-        hash.store(:error, "bad data")
-      end
       puts ""
       puts "Impression events:"
-      puts imp_array
+      puts hash[:imp_array]
 
-      parse_impression(split_imp_log, hash)
+      parse_impression(hash[:split_imp_log], hash)
 
-      click_line = imp_array.find { | line | line =~ /\tclick\t/ }
+      click_line = hash[:imp_array].find { | line | line =~ /\tclick\t/ }
       if click_line != nil
         click_hash = split_log(click_line.chomp, "impression")
         parse_impression(click_hash, hash)
       end
-      hover_line = imp_array.find { | line | line =~ /\thover\t/ }
+      hover_line = hash[:imp_array].find { | line | line =~ /\thover\t/ }
       if hover_line != nil
         hover_hash = split_log(hover_line.chomp, "impression")
         parse_impression(hover_hash, hash)
-
       end
     end
   end
 
-  def success_report(log, event_time, site_id, campaign_id, campaign_name, advertiser_id, success_data, ad_tag_id)
-    success_array = filtrate(log, event_time)
+  def success_report(hash)
+    success_array = filtrate(hash[:success_pixel_log], hash[:success_cutoff])
     success_array.keep_if { | lines | lines.to_s.include?("success") }
     begin
-      success_pixel_hash = split_log(success_array[-1].chomp, "pixel")
+      hash[:success_pixel_hash] = split_log(success_array[-1].chomp, "pixel")
     rescue NoMethodError
       FBErrorMessages::Pixels.no_success_event
-      puts "Success cutoff time: #{event_time}"
+      puts "Success cutoff time: #{hash[:success_cutoff]}"
       puts ""
-      return "no pixel"
+      hash.store(:error, "no pixel")
     end
     puts ""
     puts "Success pixel..."
-    puts "Success link: #{success_data[:link]}"
-    puts "CRV\t\t\t\t\tOID"
-    puts "Expected:\t#{success_data[:crv]}\t\tExpected:\t#{success_data[:oid]}"
+    puts "Success link: #{hash[:success_data][:link]}"
+    puts "CRV Expected:\t#{hash[:success_data][:crv]}\t\tOID Expected:\t#{hash[:success_data][:oid]}"
     puts success_array
-    parse_pixel(success_pixel_hash, site_id, campaign_id, campaign_name, advertiser_id, ad_tag_id)
-    success_pixel_hash
+    parse_pixel(hash[:success_pixel_hash], hash, hash[:test_tag])
   end
 
-  def conversion_report(type, log, event_time, success_pixel_hash, imp_hash, campaign_id, site_id)
+  def conversion_report(hash)
     puts ""
-    puts "#{type.upcase} conversion:"
-    conv = (filtrate(log, event_time))[-1]
+    puts "#{hash[:conv_type].upcase} conversion:"
+    conv = (filtrate(hash[:conversion_log], hash[:success_cutoff]))[-1]
     puts conv
-    conversion_hash = split_log(conv.chomp, "conversion")
+    hash[:conversion_hash] = split_log(conv.chomp, "conversion")
 
-    parse_conversion(conversion_hash, type, success_pixel_hash, imp_hash, campaign_id, site_id)
+    parse_conversion(hash)
 
   end
 
@@ -212,20 +192,21 @@ module Reporters
     parse_conversion(loyalty_conversion_hash, conversion, loyalty_success_pixel_hash, loyalty_imp_hash, loyalty_id, site_id)
   end
 
-  def product_report(log, event_time, site_id)
-    puts ""
-    puts "Product log:"
-    prod = product_filtrate(log, event_time)
-    puts prod
-    product_hash = split_log(prod[-1], "products")
-    #puts "product hash:"
-    #p product_hash
-    begin
-      parse_product(product_hash, site_id)
-    rescue NoMethodError
-      FBErrorMessages::Products.missing_event
+  def product_report(hash)
+    if hash["campaign_name"] =~ /dynamic/i
+      puts ""
+      puts "Product log:"
+      prod = product_filtrate(hash[:product_log], hash[:pixel_cutoff])
+      puts prod
+      product_hash = split_log(prod[-1], "products")
+      #puts "product hash:"
+      #p product_hash
+      begin
+        parse_product(product_hash, hash['siteId'])
+      rescue NoMethodError
+        FBErrorMessages::Products.missing_event
+      end
     end
-    puts ""
   end
 
   def cookie_override_header(test_site, cookie_override, show_pop_browsed)

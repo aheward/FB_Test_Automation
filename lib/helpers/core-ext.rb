@@ -1,5 +1,15 @@
+module Kernel
+  def suppress_warnings
+    original_verbosity = $VERBOSE
+    $VERBOSE = nil
+    result = yield
+    $VERBOSE = original_verbosity
+    return result
+  end
+end
+
 class Float
-  EPSILON =1e-1
+  suppress_warnings { EPSILON =1e-1 }
 
   def ==(x)
     (self-x).abs < EPSILON
