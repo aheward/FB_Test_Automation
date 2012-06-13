@@ -1,6 +1,3 @@
-require 'fb-modules'
-require 'page-object'
-
 class Account
 
   # TODO: Convert this class to using PageObject

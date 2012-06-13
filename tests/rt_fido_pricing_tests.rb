@@ -1,7 +1,7 @@
 # Pricing model inconsistency tests...
 #!/usr/bin/env ruby
 # coding: UTF-8
-
+TEST_TYPE = :rt
 require '../config/fido_env'
 
 @accounts_index.open_account @fido.test_data['test_account']

@@ -4,6 +4,7 @@
 # =========================
 # Index page crawls...
 # =========================
+TEST_TYPE = :rt
 require '../config/fido_env'
 
 nav("Sites Index")

@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 # coding: UTF-8
+TEST_TYPE = :rt
 require '../config/fido_env'
 
 # Test Overview Numbers...

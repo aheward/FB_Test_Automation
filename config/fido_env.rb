@@ -1,9 +1,8 @@
-require '../config/env.rb'
-require '../lib/pixel_imp_conversions'
-require '../lib/fido'
-require '../lib/randomizers'
+require '../config/env'
+require '../lib/fido/fido'
+require '../lib/fido/fb-modules'
+require '../lib/fido/page_classes'
 
-include Randomizers
 include CrawlerMethods
 
 @fido = Fido.new

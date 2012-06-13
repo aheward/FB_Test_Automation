@@ -1,7 +1,5 @@
 class Fido
 
-  include FidoTamers
-
   attr_reader :browser, :user_name, :password, :test_data
 
   def initialize
@@ -24,17 +22,13 @@ class Fido
       @browser.goto(@server + fido)
     end
 
-    @test_data = YAML.load_file("../lib/fido_test_data.yml")
+    @test_data = YAML.load_file("../config/fido_test_data.yml")
 
   end
 
   def page
     LoginPage.new @browser
   end
-
-end
-
-module FidoTamers
 
   def fido_log_in(user, pwd)
     # Logs in to Fido with specified user credentials.

@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # coding: UTF-8
-
+TEST_TYPE = :rt
 require '../config/fido_env'
 
 @accounts_index.open_site @fido.test_data['site_2']

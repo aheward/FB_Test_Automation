@@ -5,6 +5,7 @@
 Simple crawler of Fido to ensure no pages are grossly dysfunctional.
 
 =end
+TEST_TYPE = :rt
 require '../config/fido_env'
 
 nav("My Account")

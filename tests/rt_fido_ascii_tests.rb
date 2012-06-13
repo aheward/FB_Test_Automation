@@ -1,8 +1,7 @@
 #!/usr/bin/env ruby
 # coding: UTF-8
-
+TEST_TYPE = :rt
 require '../config/fido_env'
-
 
 # =============================
 # Tests for rejecting Non-ASCII chars...
