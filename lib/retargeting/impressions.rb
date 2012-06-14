@@ -21,7 +21,7 @@ module Impressions
   def get_impified(hash)
     unless hash[:conv_type] == "dtc" || hash[:conv_type] == "otc"
       active_tags = hash[:active_ad_tags]
-      creative = tagify(hash[:test_tag])
+      hash[:creative_link] = tagify(hash[:test_tag])
 
       if $extra_imp_count >= active_tags.length
         count = active_tags.length - 1
@@ -37,13 +37,13 @@ module Impressions
       sleep 2 # Some extra time to help separate test event from dummies
       hash[:imp_cutoff] = calc_offset_time(0)
 
-      self.goto(creative)
+      self.goto(hash[:creative_link])
       sleep $imp_seconds
-      puts "Impression link: #{creative}"
+
       if hash[:conv_type] =~ /ctc/i
-        click = self.clicktrack(hash[:url])
-        self.goto(click)
-        puts "Clicktracking link: #{click}"
+        hash[:click_link] = self.clicktrack(hash[:url])
+        self.goto(hash[:click_link])
+
       end
       get_imp_log(hash)
 

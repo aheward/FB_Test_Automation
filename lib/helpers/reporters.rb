@@ -62,7 +62,7 @@ module Reporters
     campaign_id = hash['campaignId']
     advertiser_id = hash['advertiserId']
 
-    puts "\nPixel url: #{hash[:actual_pixel_url]}"
+    puts "\nEvent time: #{hash[:pixel_cutoff]}\tPixel url: #{hash[:actual_pixel_url]}"
     print "Pixel log, prior to impression or success"
     if campaign_name != "control"
       puts ":"
@@ -88,8 +88,7 @@ module Reporters
       affiliate = get_log($affiliate_log)
       affiliate_f = affiliate_filtrate(affiliate, hash[:pixel_cutoff])
       affiliate_hash = split_log(affiliate_f[:redirect][0], "affiliate_redirect")
-      puts ""
-      puts "Affiliate Redirect Entry:"
+      puts "\nEvent time: #{hash[:pixel_cutoff]}\tAffiliate Redirect Entry:"
       puts affiliate_f[:redirect]
       begin
         parse_affiliate(affiliate_hash, hash)
@@ -101,8 +100,7 @@ module Reporters
 
   def affiliate_conversion_report(hash)
     if hash[:affiliate] == 0
-      puts ""
-      puts "Affiliate Conversion Entry:"
+      puts "\nEvent time: #{hash[:success_cutoff]}\tAffiliate Conversion Entry:"
       afl_conv_log = affiliate_filtrate(hash[:afl_conv_log], hash[:success_cutoff])
       puts afl_conv_log[:conversion]
       afl_conv_hash = split_log(afl_conv_log[:conversion][-1], "affiliate_conversion")
@@ -114,8 +112,9 @@ module Reporters
     # get impression log data...
     unless hash[:conv_type] == 'dtc' || hash[:conv_type] == 'otc'
 
-      puts ""
-      puts "Impression events:"
+      puts "\nEvent time: #{hash[:imp_cutoff]}\tImpression link: #{hash[:creative_link]}"
+      puts "Click link: #{hash[:click_link]}" if hash[:click_link] != nil
+      puts"Events:"
       puts hash[:imp_array]
 
       parse_impression(hash[:split_imp_log], hash)
@@ -140,12 +139,9 @@ module Reporters
       hash[:success_pixel_hash] = split_log(success_array[-1].chomp, "pixel")
     rescue NoMethodError
       FBErrorMessages::Pixels.no_success_event
-      puts "Success cutoff time: #{hash[:success_cutoff]}"
-      puts ""
       hash.store(:error, "no pixel")
     end
-    puts
-    puts "Success pixel...  #{hash[:success_data][:link]}"
+    puts "\nEvent time: #{hash[:success_cutoff]}\tSuccess pixel...  #{hash[:success_data][:link]}"
     puts
     puts "CRV Expected:\t#{hash[:success_data][:crv]}\t\tOID Expected:\t#{hash[:success_data][:oid]}"
     puts
