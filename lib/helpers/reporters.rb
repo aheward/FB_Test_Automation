@@ -144,11 +144,14 @@ module Reporters
       puts ""
       hash.store(:error, "no pixel")
     end
-    puts ""
-    puts "Success pixel..."
-    puts "Success link: #{hash[:success_data][:link]}"
+    puts
+    puts "Success pixel...  #{hash[:success_data][:link]}"
+    puts
     puts "CRV Expected:\t#{hash[:success_data][:crv]}\t\tOID Expected:\t#{hash[:success_data][:oid]}"
+    puts
+    puts "Success events:"
     puts success_array
+    puts
     parse_pixel(hash[:success_pixel_hash], hash, hash[:test_tag])
   end
 

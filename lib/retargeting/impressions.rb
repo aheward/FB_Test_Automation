@@ -35,7 +35,8 @@ module Impressions
         end
       end
       sleep 2 # Some extra time to help separate test event from dummies
-      hash[:imp_cutoff] = calc_offset_time(3)
+      hash[:imp_cutoff] = calc_offset_time(0)
+
       self.goto(creative)
       sleep $imp_seconds
       puts "Impression link: #{creative}"
@@ -45,16 +46,17 @@ module Impressions
         puts "Clicktracking link: #{click}"
       end
       get_imp_log(hash)
+
       hash[:imp_array] = filtrate(hash[:raw_imp_log], hash[:imp_cutoff])
 
       # Here's hoping the ad tag we want is there...
-      target = hash[:imp_array].keep_if { |line| line =~ /\t#{hash[:test_tag]}\t/}
+      target = hash[:imp_array].find_all { |line| line =~ /\t#{hash[:test_tag]}\t/ && line =~ /\timp\t/ }
 
       # fallback...
-      generic = hash[:imp_array].find { | line | line =~ /\timp\t/ }
+      generic = hash[:imp_array].find_all { | line | line =~ /\timp\t/ }
 
       if target.length == 0
-        imp_line = generic
+        imp_line = generic[0]
       else
         imp_line = target[0]
       end

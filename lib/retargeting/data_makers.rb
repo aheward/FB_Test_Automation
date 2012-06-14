@@ -15,7 +15,7 @@ module DataMakers
       campaigns = non_zero_campaign_data(site_hash['siteId'])
       campaigns.delete_if { |item| item["campaign_name"] != "landing" }
       add_camp_to_site(site_hash, campaigns)
-      add_control_perc(site)
+      add_control_perc(site_hash)
     end
     clean_up(test_sites, count)
   end
@@ -26,7 +26,7 @@ module DataMakers
       campaigns = non_zero_campaign_data(site_hash['siteId'])
       campaigns.delete_if { |item| item["campaign_name"] != "dynamic" }
       add_camp_to_site(site_hash, campaigns)
-      add_control_perc(site)
+      add_control_perc(site_hash)
     end
     clean_up(test_sites, count)
   end
@@ -38,7 +38,7 @@ module DataMakers
       campaigns.delete_if { |item| item["campaign_name"] =~ /abandon/i }
       campaigns.keep_if { |item| item["campaign_name"] != "dynamic" && item["campaign_name"] != "Dynamic" && item["campaign_name"] != "landing" && item["campaign_name"] != "control" && item["campaign_name"] != "loyalty.campaign" }
       add_camp_to_site(site_hash, campaigns)
-      add_control_perc(site)
+      add_control_perc(site_hash)
     end
     clean_up(test_sites, count)
   end
@@ -98,7 +98,7 @@ module DataMakers
     if site_hash[:creative_ids] == []
       site_hash[:account_id] = 0
     end
-
+    add_control_perc(site_hash)
     site_hash[:url] = get_pixel_link(site_hash)
     pick_affiliate_or_regular(site_hash)
   end
@@ -167,7 +167,7 @@ module DataMakers
   end
 
   def add_control_perc(test_site)
-    test_site[:control_id] ? test_site[:control_perc] == %|#{"%02d" %((site['abTestPerc'].to_i - 1))}| : test_site[:control_perc] == %|#{"%02d" %((site['abTestPerc'].to_i))}|
+    test_site[:control_id] ? test_site[:control_perc] == %|#{"%02d" %((test_site['abTestPerc'].to_i - 1))}| : test_site[:control_perc] == %|#{"%02d" %((test_site['abTestPerc'].to_i))}|
   end
 
   def clean_up(sites_hashes, count)

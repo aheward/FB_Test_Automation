@@ -79,12 +79,10 @@ module Pixel
     campaign_name = hash["campaign_name"]
     campaign_id = hash["campaignId"]
     site_id =  hash["siteId"]
-    hash[:pixel_cutoff] = calc_offset_time(1)
-
-    puts hash[:pixel_cutoff]
+    hash[:pixel_cutoff] = calc_offset_time(0)
 
     self.goto(pixel_link)
-    sleep 3 if pixel_link =~ /afl;afc\=/ # Wait extra time for redirect when using affiliate link.
+    sleep 3 if hash[:affiliate] == 0 # Wait extra time for redirect when using affiliate link.
     sleep 2 # Have to wait until pixel should have fired
     if self.html =~ /pixel.fetchback.com/i
       sleep(1) # Hopefully we've been pixeled
@@ -117,11 +115,14 @@ module Pixel
     hash.store(:actual_pixel_url, pixel_link)
     self.goto DUMMY_PAGE
     $unique_id = self.unique_identifier
-    puts $unique_id
+
+    # Get contents of pixel log...
+    get_pixel_log(hash)
   end
 
   def get_success(hash)
     hash[:success_cutoff] = calc_offset_time(2)
+
     if rand(15) > 0
       crv = "#{rand(500)}"+".#{rand(10)}"+"#{rand(10)}"
     else
@@ -140,7 +141,7 @@ module Pixel
     url = hash[:url]
     campaign_name = hash["campaign_name"]
 
-        code = FetchBack.encode_affiliate_param(site_id, 'PPJ1')
+    code = FetchBack.encode_affiliate_param(site_id, 'PPJ1')
 
     pepperjam_url_1 = "#{PIXEL_SERVER}afl?afc=PPJ1&afx=#{code}&afu="
     pepperjam_url_2 = "#{PIXEL_SERVER}afl;afc=PPJ1,afx=#{code},afu="
@@ -152,14 +153,17 @@ module Pixel
     else
       aff_link = pepperjam_url_2 + CGI::escape(CGI::escape(url))
     end
+
     aff = rand(2)
+
     if aff == 0 && ( campaign_name == "landing" || campaign_name == "dynamic" )
+
       pixel_link = aff_link
     else
       pixel_link = url
-      aff = 3 # This line is needed to make sure we don't go to affiliate logs later.
     end
-    hash.store(:pixel_info, {:pixel=>pixel_link, :affiliate=>aff})
+    hash.store(:url, pixel_link)
+    hash.store(:affiliate, aff)
   end
 
 end

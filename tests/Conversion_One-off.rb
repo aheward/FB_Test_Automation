@@ -6,7 +6,7 @@
 
 # Obviously the names must match EXACTLY...
 
-conversion_type = "ctc" # Must be lower-case and match dtc, vtc, or ctc
+conversion_type = "dtc" # Must be lower-case and match dtc, vtc, or ctc
 test_site       = "Kansas City Steaks"
 campaign_name   = "landing"
 
@@ -18,6 +18,7 @@ pixel_page = ""
 # =========================
 TEST_TYPE = :rt
 require '../config/conversion_env'
+
 test_site = data_for_a_campaign(campaign_name, test_site)
 set_up_one_site(test_site[0])
 

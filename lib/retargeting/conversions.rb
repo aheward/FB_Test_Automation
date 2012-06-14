@@ -11,11 +11,10 @@ module Conversions
         visit CookieEditor do |pg|
           pg.set_control_cookie(test_info[:control_perc])
         end
-        #@browser.dirty(test_info['siteId'], 1, 1)
-        @browser.get_pixeled(test_info)
 
-        # Get contents of pixel log...
-        get_pixel_log(test_info)
+        @browser.dirty(test_info['siteId'], 1, 1)
+
+        @browser.get_pixeled(test_info)
 
         set_conversion_type(conv_type, test_info)
         conversion_report_header(test_info)
@@ -32,7 +31,7 @@ module Conversions
           break
         end
 
-        #@browser.dirty(test_info['siteId'], 1, 1)
+        @browser.dirty(test_info['siteId'], 1, 1)
 
         # Success
         @browser.get_success(test_info)

@@ -16,7 +16,7 @@ module FetchBackConstants
   WINDOWS = %w{90 60 45 21 14 7 5}
 
   # Direct/Organic conversion offsets
-  CONVERSION_OFFSETS = [ 7175, 7200 ]
+  CONVERSION_OFFSETS = [ 7150, 7200 ]
 
   # Prefix for pixel links...
   PIXEL_SERVER = "http://pixel.fetchback.com/serve/fb/"
@@ -25,5 +25,9 @@ module FetchBackConstants
   # is necessary so that the scripts can easily
   # retrieve the fetchback cookies...
   DUMMY_PAGE = "http://pixel.fetchback.com/timeout.html"
+
+  # This is the name of the QA test 'cluster'. Please see the
+  # 'get_log' method in the Logs module for why this is needed.
+  CLUSTER = "qa-fido"
 
 end

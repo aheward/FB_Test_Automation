@@ -92,7 +92,7 @@ module Logs
       exit
     end
 
-    if $test_site == "qa-fido.fetchback.com"
+    if $test_site =~ /#{CLUSTER}/
       begin
         log_entries1 = open(log1).read #URI.parse(log1).read
       rescue SocketError
@@ -641,7 +641,7 @@ module Logs
                      puts "You have a typo in your log type for the parser. Fix it."
                  end
     else
-      puts "No logged event (or something)"
+      puts "No logged event (or something)" # TODO - Bring this code up to par
     end
   end
 
