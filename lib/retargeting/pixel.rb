@@ -9,7 +9,7 @@ module Pixel
     site_url = hash["url"]
     revshare = hash["revenueShare"]
 
-    if pixel_page == ""
+    if PIXEL_PAGE == ""
       begin
         product_url = product_url(site_id)
       rescue NoMethodError
@@ -70,7 +70,7 @@ module Pixel
                  url
              end
     else
-      hash.store(:url, pixel_page)
+      hash.store(:url, PIXEL_PAGE)
     end
   end
 
@@ -134,6 +134,23 @@ module Pixel
     sleep(2)
     hash.store(:success_pixel_log, get_log($pixel_log))
     hash.store(:success_data, {:link=>success_link, :crv=>crv, :oid=>oid})
+  end
+
+  def get_loyalty_success(hash)
+    hash.store(:loyalty_success_cutoff, calc_offset_time(0))
+    hash.store(:loyalty_success_link, "#{PIXEL_SERVER}pdj?cat=#{random_nicelink}&name=success&sid=#{hash['siteId']}")
+    @browser.goto(hash[:loyalty_success_link])
+    sleep(2)
+
+    raw_loyalty_success_pixel_log = get_log(@config.pixel_log)
+    filtered_loyalty_success_pixel_log = filtrate(raw_loyalty_success_pixel_log, loyalty_success_cutoff)
+    loyalty_success_pixel_hash = split_log(filtered_loyalty_success_pixel_log[-1].chomp, "pixel")
+
+    raw_loyalty_conversion_log = get_log(@config.conversion_log)
+    filtered_loyalty_conversion_log = filtrate(raw_loyalty_conversion_log, loyalty_success_cutoff)
+    loyalty_conversion_hash = split_log(filtered_loyalty_conversion_log[-1].chomp, "conversion")
+
+
   end
 
   def pick_affiliate_or_regular(hash)

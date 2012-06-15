@@ -23,20 +23,6 @@ module SQLCommands
                         FROM creative_data);|)
   end
 
-  #def test_site_data(sites_array, as_hash=true)
-  #  SITES_DB.results_as_hash = as_hash
-  #  SITES_DB.execute(%|SELECT s.name site_name, s.siteId, s.url, c.name campaign_name,
-  #                  c.campaignId, s.cpm, s.cpa, s.revenueShare, conversionWindow,
-  #                  s.cpc, s.cpe, s.advertiserId, s.abTestPerc
-  #                  FROM site_data s, campaign_data c
-  #                  WHERE c.siteId = s.siteId
-  #                  AND c.performanceWeight IS NOT "0.0000"
-	 #                 AND c.campaignId
-		#                IN (SELECT campaignId FROM creative_data)
-	 #                 AND s.siteId
-		#                IN (#{sites_array.join(", ")});|)
-  #end
-
   def site_data(site_ids, as_hash=true)
     SITES_DB.results_as_hash = as_hash
     SITES_DB.execute(%|SELECT siteId, name site_name, url, cpa, cpe, cpm, cpc,
@@ -45,14 +31,6 @@ module SQLCommands
 	                      WHERE siteId
 	                      IN (#{site_ids.join(", ")});|)
   end
-
-  #def loyalty_site_date(sites_array, as_hash=true)
-  #  SITES_DB.results_as_hash = as_hash
-  #  SITES_DB.execute(%|SELECT siteId, name, url, cpa, cpe, cpm, cpc, revenueShare, abTestPerc
-	 #                 FROM site_data
-	 #                 WHERE siteId
-	 #                 IN (#{sites_array.join(", ")});|)
-  #end
 
   def data_for_a_campaign(campaign_name, site_name, as_hash=true)
     SITES_DB.results_as_hash = as_hash

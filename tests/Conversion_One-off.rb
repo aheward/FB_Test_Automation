@@ -6,14 +6,15 @@
 
 # Obviously the names must match EXACTLY...
 
-conversion_type = "dtc" # Must be lower-case and match dtc, vtc, or ctc
+conversion_type = "dtc" # Must be lower-case, in quotes, and match dtc, vtc, or ctc
 test_site       = "Kansas City Steaks"
 campaign_name   = "landing"
 
 # If you need to test a special pixel page, define it here.
 # This URL will be used instead of the default URL.
-# If you aren't going to specify a URL, make sure this line reads: pixel_page = ""
-pixel_page = ""
+# The URL must be enclosed in quotes.
+# If you aren't going to specify a URL, make sure this line reads: PIXEL_PAGE = ""
+PIXEL_PAGE = ""
 
 # =========================
 TEST_TYPE = :rt

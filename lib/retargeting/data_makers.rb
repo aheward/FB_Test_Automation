@@ -103,6 +103,25 @@ module DataMakers
     pick_affiliate_or_regular(site_hash)
   end
 
+  def get_ad_tags_data(hash)
+    begin
+      hash[:active_ad_tags] = ad_tags_for_campaign(hash["campaignId"])
+      hash[:active_ad_tags].shuffle!
+      hash[:test_tag] = hash[:active_ad_tags][0]
+      hash[:creative_link] = tagify(hash[:test_tag])
+      tag_data = ad_tag_data(hash[:test_tag])
+      hash.store(:ad_tag_cpm, tag_data[0])
+      hash.store(:network_name, tag_data[1])
+      hash.store(:network_id, tag_data[2])
+    rescue NoMethodError
+      hash[:account] = 0
+    end
+  end
+
+  def get_creatives_for_campaign(hash)
+    hash.store(:creative_ids, creatives(hash['campaignId']))
+  end
+
   private
 
   def get_generic_test_sites(count)

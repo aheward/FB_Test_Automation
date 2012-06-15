@@ -12,7 +12,7 @@ module Conversions
           pg.set_control_cookie(test_info[:control_perc])
         end
 
-        @browser.dirty(test_info['siteId'], 1, 1)
+        @browser.dirty(test_info['siteId'], rand[3], 2)
 
         @browser.get_pixeled(test_info)
 
@@ -22,16 +22,17 @@ module Conversions
         affiliate_redirect_report(test_info)
         if test_info.data_error?
           tested_sites << test_info["siteId"]
-          FBErrorMessages::Logs.missing_affiliate_event(test_info[:actual_pixel_url])
+          puts test_info[:error]
           next
         end
 
         @browser.get_impified(test_info)
         if test_info.data_error?
+          puts test_info[:error]
           break
         end
 
-        @browser.dirty(test_info['siteId'], 1, 1)
+        @browser.dirty(test_info['siteId'], rand[3], 2)
 
         # Success
         @browser.get_success(test_info)
@@ -39,26 +40,40 @@ module Conversions
         # Collect info from Conversion log, plus affiliate and product logs, if necessary...
         get_conversion_plus(test_info)
 
+        # Tests for Loyalty campaigns...
+        if test_info[:loyalty_id] !=nil
+          @browser.get_loyalty_impified(test_info)
+          @browser.dirty(test_info['siteId'], rand[3], 2)
+
+        end
+
         #Report Results....
 
         pixel_report(test_info)
         if test_info.data_error?
+          puts test_info[:error]
           break
         end
 
         impression_report(test_info)
         if test_info.data_error?
+          puts test_info[:error]
           break
         end
 
         success_report(test_info)
         if test_info.data_error?
+          puts test_info[:error]
           break
         end
 
         conversion_report(test_info)
         affiliate_conversion_report(test_info)
         product_report(test_info)
+        if test_info.data_error?
+          puts test_info[:error]
+          break
+        end
 
         @browser.show_cookies
         @browser.cookies.clear

@@ -88,7 +88,7 @@ module Logs
     begin
       log_entries = open(log).read #URI.parse(log).read
     rescue SocketError
-      FBErrorMessages::Logs.unable_to_open_log_file(log)
+      puts FBErrorMessages::Logs.unable_to_open_log_file(log)
       exit
     end
 
@@ -96,7 +96,7 @@ module Logs
       begin
         log_entries1 = open(log1).read #URI.parse(log1).read
       rescue SocketError
-        FBErrorMessages::Logs.unable_to_open_log_file(log1)
+        puts FBErrorMessages::Logs.unable_to_open_log_file(log1)
         exit
       end
       log_entries << log_entries1
@@ -112,6 +112,24 @@ module Logs
 
   def get_imp_log(hash)
     hash.store(:raw_imp_log, get_log($imp_log))
+    hash.store(:imp_array, filtrate(hash[:raw_imp_log], hash[:imp_cutoff]))
+    imp_line = get_target_imp_event(hash[:imp_array])
+    begin
+      hash.store(:split_imp_log, split_log(imp_line.chomp, "impression"))
+    rescue NoMethodError
+      hash.store(:error, FBErrorMessages::Imps.no_imp_event)
+    end
+  end
+
+  def get_loyalty_imp_log(hash)
+    hash.store(:raw_loyalty_imp_log, get_log($imp_log))
+    hash.store(:loyalty_imp_array, filtrate(hash[:raw_loyalty_imp_log], hash[:loyalty_cutoff]))
+    imp_line = get_target_imp_event(hash[:loyalty_imp_array])
+    begin
+      hash.store(:split_loyalty_imp_log, split_log(imp_line.chomp, "impression"))
+    rescue NoMethodError
+      hash.store(:error, FBErrorMessages::Imps.no_imp_event)
+    end
   end
 
   def get_conversion_plus(hash)
@@ -275,8 +293,7 @@ module Logs
 
   end
 
-  def parse_impression(imp_hash, hash)
-    campaign_id = hash['campaignId']
+  def parse_impression(imp_hash, campaign_id, hash)
     ad_tag_ids = hash[:active_ad_tags]
     cpm = hash[:ad_tag_cpm]
     cpc = hash['cpc']
@@ -692,6 +709,20 @@ module Logs
 
   def calc_offset_time(local_adjustment)
     (Time.now.utc - $offset.to_i - local_adjustment).strftime("%X")
+  end
+
+  private
+
+  def get_target_imp_event(array)
+    target = array.find_all { |line| line =~ /\t#{hash[:test_tag]}\t/ && line =~ /\timp\t/ }
+
+    # fallback...
+    generic = array.find_all { | line | line =~ /\timp\t/ }
+    if target.length == 0
+      generic[0]
+    else
+      target[0]
+    end
   end
 
 end

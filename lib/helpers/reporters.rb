@@ -78,8 +78,7 @@ module Reporters
       split_pixel_log = split_log(target_pixel_event.chomp, "pixel")
       parse_pixel(split_pixel_log, hash, advertiser_id)
     rescue NoMethodError
-      FBErrorMessages::Pixels.no_pixel_fired
-      hash.store(:error, "bad data")
+      hash.store(:error, FBErrorMessages::Pixels.no_pixel_fired)
     end
   end
 
@@ -93,7 +92,7 @@ module Reporters
       begin
         parse_affiliate(affiliate_hash, hash)
       rescue NoMethodError
-        hash.store(:error, "bad data")
+        hash.store(:error, FBErrorMessages::Logs.missing_affiliate_event(test_info[:actual_pixel_url]))
       end
     end
   end
@@ -114,20 +113,20 @@ module Reporters
 
       puts "\nEvent time: #{hash[:imp_cutoff]}\tImpression link: #{hash[:creative_link]}"
       puts "Click link: #{hash[:click_link]}" if hash[:click_link] != nil
-      puts"Events:"
+      puts"Event(s):"
       puts hash[:imp_array]
 
-      parse_impression(hash[:split_imp_log], hash)
+      parse_impression(hash[:split_imp_log], hash['campaignId'], hash)
 
       click_line = hash[:imp_array].find { | line | line =~ /\tclick\t/ }
       if click_line != nil
         click_hash = split_log(click_line.chomp, "impression")
-        parse_impression(click_hash, hash)
+        parse_impression(click_hash, hash['campaignId'], hash)
       end
       hover_line = hash[:imp_array].find { | line | line =~ /\thover\t/ }
       if hover_line != nil
         hover_hash = split_log(hover_line.chomp, "impression")
-        parse_impression(hover_hash, hash)
+        parse_impression(hover_hash, hash['campaignId'], hash)
       end
     end
   end
@@ -138,8 +137,7 @@ module Reporters
     begin
       hash[:success_pixel_hash] = split_log(success_array[-1].chomp, "pixel")
     rescue NoMethodError
-      FBErrorMessages::Pixels.no_success_event
-      hash.store(:error, "no pixel")
+      hash.store(:error, FBErrorMessages::Pixels.no_success_event)
     end
     puts "\nEvent time: #{hash[:success_cutoff]}\tSuccess pixel...  #{hash[:success_data][:link]}"
     puts
@@ -162,26 +160,12 @@ module Reporters
 
   end
 
-  def loyalty_report(imp_log, pixel_log, conversion_log, loyalty_imp_time, loyalty_success_time, loyalty_id, ad_tags, cpm, cpc, site_id, advertiser_id)
-    raw_loyalty_log = get_log(imp_log)
-    filtered_loyalty_log = filtrate(raw_loyalty_log, loyalty_imp_time)
-    loyalty_imp_event = filtered_loyalty_log.find { | line | line =~ /\timp\t/ }
-    loyalty_imp_hash = split_log(loyalty_imp_event.chomp, "impression")
+  def loyalty_report(hash)
+    puts "\n\nEvent time: #{hash[:loyalty_cutoff]}\tLoyalty impression: #{hash[:creative_link]}\nEvent:"
+    puts hash[:loyalty_imp_array]
+    parse_impression(hash[:split_loyalty_imp_log], hash[:loyalty_id], hash)
 
-    raw_loyalty_success_pixel_log = get_log(pixel_log)
-    filtered_loyalty_success_pixel_log = filtrate(raw_loyalty_success_pixel_log, loyalty_success_time)
-    loyalty_success_pixel_hash = split_log(filtered_loyalty_success_pixel_log[-1].chomp, "pixel")
-
-    raw_loyalty_conversion_log = get_log(conversion_log)
-    filtered_loyalty_conversion_log = filtrate(raw_loyalty_conversion_log, loyalty_success_time)
-    loyalty_conversion_hash = split_log(filtered_loyalty_conversion_log[-1].chomp, "conversion")
-
-    puts "\n\nLoyalty impression:"
-    puts filtered_loyalty_log
-    parse_impression(loyalty_imp_hash, loyalty_id, ad_tags, cpm, cpc)
-
-    puts ""
-    puts "Loyalty success pixel:"
+    puts "\n\nEvent time:#{hash[:loyalty_success_cutoff]}\n\nLoyalty success pixel:"
     puts filtered_loyalty_success_pixel_log
     parse_pixel(loyalty_success_pixel_hash, site_id, loyalty_id, "loyalty.campaign", advertiser_id, ad_tags[0])
 
@@ -203,7 +187,7 @@ module Reporters
       begin
         parse_product(product_hash, hash['siteId'])
       rescue NoMethodError
-        FBErrorMessages::Products.missing_event
+        hash.store(:error, FBErrorMessages::Products.missing_event)
       end
     end
   end

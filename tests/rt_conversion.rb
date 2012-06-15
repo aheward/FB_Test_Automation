@@ -12,11 +12,5 @@ TEST_TYPE = :rt
 require '../config/conversion_env'
 
 test_data = get_general_test_data(10)
-=begin
-test_data.each { |s|
-  p s['site_name']
-  p s['campaign_name']
-  p s[:active_ad_tags]
-}
-=end
+
 regression_conversion_test(test_data, CONVERSIONS)
