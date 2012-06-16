@@ -12,7 +12,7 @@ module Conversions
           pg.set_control_cookie(test_info[:control_perc])
         end
 
-        @browser.dirty(test_info['siteId'], rand[3], 2)
+        #@browser.dirty(test_info['siteId'], rand(3), 2)
 
         @browser.get_pixeled(test_info)
 
@@ -32,7 +32,7 @@ module Conversions
           break
         end
 
-        @browser.dirty(test_info['siteId'], rand[3], 2)
+        #@browser.dirty(test_info['siteId'], rand(3), 2)
 
         # Success
         @browser.get_success(test_info)
@@ -43,7 +43,9 @@ module Conversions
         # Tests for Loyalty campaigns...
         if test_info[:loyalty_id] !=nil
           @browser.get_loyalty_impified(test_info)
-          @browser.dirty(test_info['siteId'], rand[3], 2)
+          #@browser.dirty(test_info['siteId'], rand(3), 2)
+          @browser.get_loyalty_success(test_info)
+          get_loyalty_logs(test_info)
 
         end
 
@@ -68,11 +70,29 @@ module Conversions
         end
 
         conversion_report(test_info)
+        if test_info.data_error?
+          puts test_info[:error]
+          break
+        end
+
         affiliate_conversion_report(test_info)
+        if test_info.data_error?
+          puts test_info[:error]
+          break
+        end
+
         product_report(test_info)
         if test_info.data_error?
           puts test_info[:error]
           break
+        end
+
+        if test_info[:loyalty_id] !=nil
+          loyalty_report(test_info)
+          if test_info.data_error?
+            puts test_info[:error]
+            break
+          end
         end
 
         @browser.show_cookies

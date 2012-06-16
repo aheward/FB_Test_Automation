@@ -2,14 +2,16 @@ module Pixel
 
   # This method builds a site link that is likely (though not guaranteed) to fire off a pixel for
   # the desired campaign.
-  def get_pixel_link(hash, pixel_page="")
+  def make_pixel_link(hash)
     campaign_name = hash["campaign_name"]
     site_id = hash["siteId"]
     campaign_id =hash["campaignId"]
     site_url = hash["url"]
     revshare = hash["revenueShare"]
 
-    if PIXEL_PAGE == ""
+    if defined?(PIXEL_PAGE) && PIXEL_PAGE != ""
+      hash.store(:url, PIXEL_PAGE)
+    else
       begin
         product_url = product_url(site_id)
       rescue NoMethodError
@@ -21,8 +23,7 @@ module Pixel
       url = case
               when special_urls.by_site.keys.include?(site_id.to_i)
                 special_urls.by_site[site_id.to_i]
-
-              else
+      else
                 if campaign_name =~ /dynamic/i
 
                   unless product_url == "empty"
@@ -57,7 +58,7 @@ module Pixel
                 else
                   site_url
                 end
-            end
+      end
 
       # Below is code to force particular URLs for campaigns that are KNOWN
       # to require specific URLs.
@@ -69,8 +70,7 @@ module Pixel
                else
                  url
              end
-    else
-      hash.store(:url, PIXEL_PAGE)
+
     end
   end
 
@@ -137,20 +137,10 @@ module Pixel
   end
 
   def get_loyalty_success(hash)
-    hash.store(:loyalty_success_cutoff, calc_offset_time(0))
+    hash.store(:loyalty_success_cutoff, calc_offset_time(1))
     hash.store(:loyalty_success_link, "#{PIXEL_SERVER}pdj?cat=#{random_nicelink}&name=success&sid=#{hash['siteId']}")
-    @browser.goto(hash[:loyalty_success_link])
+    self.goto(hash[:loyalty_success_link])
     sleep(2)
-
-    raw_loyalty_success_pixel_log = get_log(@config.pixel_log)
-    filtered_loyalty_success_pixel_log = filtrate(raw_loyalty_success_pixel_log, loyalty_success_cutoff)
-    loyalty_success_pixel_hash = split_log(filtered_loyalty_success_pixel_log[-1].chomp, "pixel")
-
-    raw_loyalty_conversion_log = get_log(@config.conversion_log)
-    filtered_loyalty_conversion_log = filtrate(raw_loyalty_conversion_log, loyalty_success_cutoff)
-    loyalty_conversion_hash = split_log(filtered_loyalty_conversion_log[-1].chomp, "conversion")
-
-
   end
 
   def pick_affiliate_or_regular(hash)
@@ -158,7 +148,7 @@ module Pixel
     url = hash[:url]
     campaign_name = hash["campaign_name"]
 
-    code = FetchBack.encode_affiliate_param(site_id, 'PPJ1')
+    code = FBCipher.encode_affiliate_param(site_id, 'PPJ1')
 
     pepperjam_url_1 = "#{PIXEL_SERVER}afl?afc=PPJ1&afx=#{code}&afu="
     pepperjam_url_2 = "#{PIXEL_SERVER}afl;afc=PPJ1,afx=#{code},afu="
@@ -174,7 +164,6 @@ module Pixel
     aff = rand(2)
 
     if aff == 0 && ( campaign_name == "landing" || campaign_name == "dynamic" )
-
       pixel_link = aff_link
     else
       pixel_link = url

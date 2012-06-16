@@ -5,13 +5,14 @@
 test_site = "angieslist.com"
 
 # =================
+TEST_TYPE = :rt
 require '../config/conversion_env'
 
-site = $sites_db.get_cukov_data_by_site_name(test_site)
+site = SITES_DB.cukov_data_by_site_name(test_site)
 
 test_hash = site[0]
 
-campaigns = $sites_db.get_camp_names_by_sid(test_hash['siteId'])
+campaigns = SITES_DB.camp_names_by_sid(test_hash['siteId'])
 
 campaigns.delete_if do | chash |
 	
@@ -46,7 +47,7 @@ end
 # Get ad tag ids...
 # Probably going to want to modify this to exclude some of the ad tags.
 # We'll see...
-ad_tags = $sites_db.get_ad_tag_ids_by_site_id(test_hash['siteId'])
+ad_tags = SITES_DB.ad_tag_ids_by_site_id(test_hash['siteId'])
 
 begin
 	ad_tags.flatten!.shuffle!
@@ -65,53 +66,42 @@ def serve_imps(ad_tags, browser)
 	
 	ad_tags.each do | ad_tag |
 
-		imp_cutoff = calc_offset_time(@config.offset, 2)
-		browser.get_impified(1, 0, [ad_tag], "vtc", "none")
+		imp_cutoff = calc_offset_time(2)
+		browser.goto(tagify(ad_tag))
+    sleep $imp_seconds
+    browser.goto DUMMY_PAGE
+    $unique_id = browser.unique_identifier
 
-		imp_array = filtrate(get_log(@config.imp_log), imp_cutoff)
+		imp_array = filtrate(get_log($imp_log), imp_cutoff)
 		imp_array.keep_if { | lines | lines.include?("\timp\t") }
 		imp_hash = split_log(imp_array[-1], "impression")
 		#puts "Test for no cookies at all..."
-		puts ""
-		puts "Imp log entry:"
+		puts "\nImp log entry:"
 		puts imp_array[-1]
 		puts "Logged Return Code: #{imp_hash[:return_code]}"
 		puts return_code(imp_hash[:return_code])
-
+    browser.show_cookies
 	end
 	
 end	
-puts
-puts "No cookie history..."
+
+puts "\nNo cookie history..."
 puts "===================="
 
-browser = @config.browser
-
 #Serve test impressions...
-serve_imps(ad_tags, browser)
+serve_imps(ad_tags, @browser)
 
-puts
-puts "Cookie history..."
+puts "\nCookie history..."
 puts "===================="
 
 # Get pixeled for a random site...
-cuhkies = 0
-until cuhkies == 1 do
+while @browser.sit[:value] =~ /^\d_\d+$/
 
-	browser.dirty(test_hash['siteId'], 1, 1)
+	@browser.dirty(test_hash['siteId'], 1, 1)
+  @browser.goto DUMMY_PAGE
 
-	browser.goto("http://#{@config.test_site}/fido/")
-	browser.fido_log_in(@config.fido_username, @config.fido_password)
-	browser.link(:text, "Misc").click
-	browser.link(:text, "Cookie Analysis").click
-	if browser.text.include?("No campaign cookie history is available.")
-		cuhkies = 0 
-	else
-		cuhkies = 1
-	end	
-	
 end
 
 #Serve test impressions...
 
-serve_imps(ad_tags, browser)
+serve_imps(ad_tags, @browser)

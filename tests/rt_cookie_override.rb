@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+TEST_TYPE = :rt
 require '../config/conversion_env'
 
 @blacklist = BlacklistedSites.new.sites
@@ -13,7 +14,7 @@ data_hashes_array = []
 	x < 2 ? co = 0 : co = 1
 	x == 0 || x == 2 ? spb = 0 : spb = 1
 
-	sites = $sites_db.get_cukov_by_co_and_spb(co, spb)
+	sites = SITES_DB.cukov_by_co_and_spb(co, spb)
 
 	sites.delete_if { | row | row["name"] =~ /opt.*out/i }
 	sites.delete_if { | row | row["name"] =~ /UK/ }
@@ -34,7 +35,7 @@ data_hashes_array.each do | hash |
 		hash.delete(x)
 	end
 
-	campaigns = $sites_db.get_camp_names_by_sid(hash['siteId'])
+	campaigns = SITES_DB.camp_names_by_sid(hash['siteId'])
 
 	campaigns.delete_if do | chash |
 		
@@ -58,9 +59,9 @@ data_hashes_array.each do | hash |
 		hash["campaign"] = campaigns[0]["name"]
 	end
 
-	camp_id = $sites_db.get_cpid_from_sid_and_cpname(hash['siteId'], hash['campaign'])
+	camp_id = SITES_DB.cpid_from_sid_and_cpname(hash['siteId'], hash['campaign'])
 
-	ad_tags = $sites_db.get_ad_tags_by_site_and_camp(hash["siteId"], camp_id)
+	ad_tags = SITES_DB.ad_tags_by_site_and_camp(hash["siteId"], camp_id)
 
 	begin
 		ad_tags.flatten!.shuffle!
@@ -71,7 +72,7 @@ data_hashes_array.each do | hash |
 
 	hash["ad_tag"] = ad_tags[0]
 
-	cpm_raw = $sites_db.get_network_cpm(hash["ad_tag"], true)
+	cpm_raw = SITES_DB.network_cpm(hash["ad_tag"], true)
 	hash["cpm"] = cpm_raw[0]["cpm"]
 
 end
@@ -87,7 +88,7 @@ data_hashes_array.shuffle!
 def serve_imps(hash_array, return_code)
 	
 	hash_array.each do | hash |
-		
+		puts
 		hash['imp_code'] == 4 ? rc = 4005 : rc = return_code
     string =  "| #{hash['name']} | ID: #{hash['siteId']} | #{hash['campaign']} |"
     border = "+"
@@ -109,12 +110,14 @@ def serve_imps(hash_array, return_code)
 		puts "Expected Return Code: #{rc}"
 		
 		sleep(1)
-		imp_cutoff = calc_offset_time(@config.offset, 1)
+		imp_cutoff = calc_offset_time(1)
 		#puts imp_cutoff
 		@browser.goto(tagify(hash["ad_tag"]))
-		sleep(1)
+		sleep $imp_seconds
+    @browser.goto DUMMY_PAGE
+    $unique_id = @browser.unique_identifier
 		
-		imp_array = filtrate(get_log(@config.imp_log), imp_cutoff)
+		imp_array = filtrate(get_log($imp_log), imp_cutoff)
 		#p imp_array
 		imp_array.keep_if { | lines | lines.include?("\timp\t") }
 		imp_hash = split_log(imp_array[-1], "impression")
@@ -125,7 +128,7 @@ def serve_imps(hash_array, return_code)
 
 		if hash['campaign'] == "dynamic"
 			
-			proxy_log = get_log(@config.proxy_log)
+			proxy_log = get_log($proxy_log)
 
 			puts ""
 			puts "Proxy log:"
@@ -145,21 +148,18 @@ def serve_imps(hash_array, return_code)
 			puts "FAILED"
 		end	
 		
-		puts ""
+		@browser.show_cookies
 		
 	end
 
 end
 
-@browser = @config.browser
-
 puts "+=========================+"
 puts "|  Cookie Override Tests  |"
 puts "+=========================+"
 puts ""
-puts "Number of sites tested: #{data_hashes_array.length}"
+puts "Number of sites tested: #{data_hashes_array.length}\n"
 # No history
-puts ""
 
 serve_imps(data_hashes_array, 1007)
 
@@ -170,9 +170,9 @@ serve_imps(data_hashes_array, 1007)
 puts ""
 
 # This list is needed in case the first (or second) site visited doesn't fire the pixel properly...
-random_site = ["http://harrison.edu/", 
+random_site = ["http://harrison.edu/",
 "http://www.gnc.com/product/index.jsp?productId=3509954&cp=4046468.4174422",
-"http://www.shutterstock.com/subscribe.mhtml", 
+"http://www.shutterstock.com/subscribe.mhtml",
 "http://www.1800dentist.com",
 "http://www.zulily.com",
 "http://www.zurchers.com",
@@ -181,24 +181,14 @@ random_site = ["http://harrison.edu/",
 "http://www.511tactical.com/All-Products/Flashlights/Light-For-Life-Flashlight-PC3300.html",
 "http://www.accessorygeeks.com/ichair-iphone-4-rubber-case-kickstand-screen-blk-blue.html",
 "http://www.aboutairportparking.com/newark-liberty-international-airport-parking"]
-	
-cuhkies = 0
-until cuhkies == 1 do
 
-	@browser.goto(random_site[rand(random_site.length)])
-	sleep(1)
-	@browser.goto("http://#{@config.test_site}/fido/")
-  login = LoginPage.new @browser
-  accounts_index = login.fido_log_in(@config.fido_username, @config.fido_password)
-	misc = accounts_index.misc_tab
-  cookie_analysis = misc.cookie_analysis
+# Get pixeled for a random site...
+while @browser.sit[:value] =~ /^\d_\d+$/
 
-	if cookie_analysis.campaign_history_element.text.include?("No campaign cookie history is available.")
-		cuhkies = 0 
-	else
-		cuhkies = 1
-	end	
-	
+  @browser.goto(random_site[rand(random_site.length)])
+  sleep 2
+  @browser.goto DUMMY_PAGE
+
 end
 
 serve_imps(data_hashes_array, 1010)

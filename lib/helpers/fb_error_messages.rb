@@ -79,6 +79,18 @@ module FBErrorMessages
 
   end
 
+  module Success
+
+    def self.conversion_missing
+      "Unable to find the appropriate conversion event"
+    end
+
+    def self.loyalty_conversion
+      "Couldn't find the expected Loyalty conversion event. Check that it's there.\nMaybe you have to adjust the offset in your config."
+    end
+
+  end
+
   module Sites
 
     def self.missing_data

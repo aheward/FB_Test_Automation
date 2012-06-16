@@ -53,6 +53,8 @@ module DataMakers
       get_good_campaign_data(site)
       # Control campaign ID
       site[:loyalty_id] = cpid_from_sid_and_cpname(site["siteId"], "loyalty.campaign")
+      loyalty_conv = CONVERSIONS[1..2]
+      site[:loyalty_conv_type] = loyalty_conv[rand(2)]
       add_control_perc(site)
     end
     clean_up(test_sites, count)
@@ -99,7 +101,7 @@ module DataMakers
       site_hash[:account_id] = 0
     end
     add_control_perc(site_hash)
-    site_hash[:url] = get_pixel_link(site_hash)
+    site_hash[:url] = make_pixel_link(site_hash)
     pick_affiliate_or_regular(site_hash)
   end
 
@@ -114,7 +116,10 @@ module DataMakers
       hash.store(:network_name, tag_data[1])
       hash.store(:network_id, tag_data[2])
     rescue NoMethodError
-      hash[:account] = 0
+      hash[:account_id] = 0
+    end
+    if hash[:active_ad_tags].class != Array
+      hash[:account_id] = 0
     end
   end
 
@@ -186,7 +191,7 @@ module DataMakers
   end
 
   def add_control_perc(test_site)
-    test_site[:control_id] ? test_site[:control_perc] == %|#{"%02d" %((test_site['abTestPerc'].to_i - 1))}| : test_site[:control_perc] == %|#{"%02d" %((test_site['abTestPerc'].to_i))}|
+    test_site[:control_id] ? test_site[:control_perc] = %|#{"%02d" %((test_site['abTestPerc'].to_i - 1))}| : test_site[:control_perc] = %|#{"%02d" %((test_site['abTestPerc'].to_i))}|
   end
 
   def clean_up(sites_hashes, count)

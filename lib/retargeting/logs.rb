@@ -113,7 +113,7 @@ module Logs
   def get_imp_log(hash)
     hash.store(:raw_imp_log, get_log($imp_log))
     hash.store(:imp_array, filtrate(hash[:raw_imp_log], hash[:imp_cutoff]))
-    imp_line = get_target_imp_event(hash[:imp_array])
+    imp_line = get_target_imp_event(hash[:imp_array], hash[:test_tag])
     begin
       hash.store(:split_imp_log, split_log(imp_line.chomp, "impression"))
     rescue NoMethodError
@@ -124,7 +124,7 @@ module Logs
   def get_loyalty_imp_log(hash)
     hash.store(:raw_loyalty_imp_log, get_log($imp_log))
     hash.store(:loyalty_imp_array, filtrate(hash[:raw_loyalty_imp_log], hash[:loyalty_cutoff]))
-    imp_line = get_target_imp_event(hash[:loyalty_imp_array])
+    imp_line = get_target_imp_event(hash[:loyalty_imp_array], hash[:test_tag])
     begin
       hash.store(:split_loyalty_imp_log, split_log(imp_line.chomp, "impression"))
     rescue NoMethodError
@@ -156,6 +156,19 @@ module Logs
     end
     array.delete_if  { | lines | (lines.to_s)[16..24] < hash[:pixel_cutoff]  }
     array
+  end
+
+  def get_loyalty_logs(hash)
+    hash.store(:raw_loyalty_success_pixel_log, get_log($pixel_log))
+    hash.store(:filtered_loyalty_success, filtrate(hash[:raw_loyalty_success_pixel_log], hash[:loyalty_success_cutoff]))
+    hash.store(:loyalty_success_pixel_hash, split_log(hash[:filtered_loyalty_success][-1].chomp, "pixel"))
+    hash.store(:raw_loyalty_conversion_log, get_log($conversion_log))
+    hash.store(:filtered_loyalty_conversion, filtrate(hash[:raw_loyalty_conversion_log], hash[:loyalty_success_cutoff]))
+    begin
+      hash.store(:loyalty_conversion_hash, split_log(hash[:filtered_loyalty_conversion][-1].chomp, "conversion"))
+    rescue NoMethodError
+      hash.store(:error, FBErrorMessages::Success.loyalty_conversion)
+    end
   end
 
   # TODO - Add support for campaign ID.
@@ -191,14 +204,8 @@ module Logs
 
   # This method takes the hash of the conversion log (made using the split_log method)
   # and checks that the event matches expectations by comparing it to all the other data passed into it.
-  def parse_conversion(hash, merit30= -1, merit7=50, merit3=25, merit1=5)
-    conversion_hash = hash[:conversion_hash]
-    conversion_type = hash[:conv_type]
-    pixel_hash= hash[:success_pixel_hash]
-    imp_hash = hash[:split_imp_log]
-    campaign_id = hash['campaignId']
-    site_id = hash['siteId']
-    #p conversion_hash
+  def parse_conversion(test_info_hash, campaign_id, imp_event_hash, success_event_hash, conversion_hash, conversion_type, merit30= -1, merit7=50, merit3=25, merit1=5)
+    site_id = test_info_hash['siteId']
 
     puts "Latest impression time: #{Time.at(conversion_hash[:latest_imp_time].to_i)}" if conversion_hash[:latest_imp_time].to_i != 0
     puts "Latest Pixel time: #{Time.at(conversion_hash[:latest_pixel_time].to_i)}" if conversion_hash[:latest_pixel_time].to_i != 0
@@ -211,9 +218,9 @@ module Logs
     unless conversion_hash[:conversion_type] == "dtc" || conversion_hash[:campaign_name] == "loyalty.campaign"
       puts "---Unexpected Conversion Type!" if conversion_type != conversion_hash[:conversion_type]
     end
-    puts "---Revenue inconsistency: #{conversion_hash[:client_revenue]} -- #{pixel_hash[:order_revenue]}" if pixel_hash[:order_revenue].to_f != conversion_hash[:client_revenue].to_f
-    puts "---Conflicting first site time! Conversion Log's time: #{Time.at(conversion_hash[:first_site_visit].to_i)}, Pixel log's time: #{Time.at(pixel_hash[:first_site_visit_time].to_i)}" if conversion_hash[:first_site_visit] != pixel_hash[:first_site_visit_time]
-    puts "---Conflicting order ID! #{conversion_hash[:order_id]} #{pixel_hash[:order_id]}" if conversion_hash[:order_id] != pixel_hash[:order_id]
+    puts "---Revenue inconsistency: #{conversion_hash[:client_revenue]} -- #{success_event_hash[:order_revenue]}" if success_event_hash[:order_revenue].to_f != conversion_hash[:client_revenue].to_f
+    puts "---Conflicting first site time! Conversion Log's time: #{Time.at(conversion_hash[:first_site_visit].to_i)}, Pixel log's time: #{Time.at(success_event_hash[:first_site_visit_time].to_i)}" if conversion_hash[:first_site_visit] != success_event_hash[:first_site_visit_time]
+    puts "---Conflicting order ID! #{conversion_hash[:order_id]} #{success_event_hash[:order_id]}" if conversion_hash[:order_id] != success_event_hash[:order_id]
     puts "---Conversion log date is off! Log date: #{conversion_hash[:date]}, Today's date: #{Time.now.strftime('%Y-%m-%d') }" if conversion_hash[:date] != Time.now.strftime("%Y-%m-%d")
     puts "---Something's up with the conversion log!" if conversion_hash[:level] != "INFO" || conversion_hash[:geo] != "1"
 
@@ -257,9 +264,9 @@ module Logs
             puts "Log reports: #{conversion_hash[:merit].to_f*100.0}%"
           end
         end
-        if conversion_hash[:campaign_id].to_i  != campaign_id.to_i && imp_hash[:return_code] != "2002"
+        if conversion_hash[:campaign_id].to_i  != campaign_id.to_i && imp_event_hash[:return_code] != "2002"
           puts "---Unexpected campaign ID in the conversion log - #{conversion_hash[:campaign_id]}. Please compare with imp log results."
-        elsif conversion_hash[:campaign_id].to_i  != campaign_id.to_i && imp_hash[:return_code] == "2002"
+        elsif conversion_hash[:campaign_id].to_i  != campaign_id.to_i && imp_event_hash[:return_code] == "2002"
           puts "---Ad Tag Preview mode is messing up this test."
         end
 
@@ -267,17 +274,17 @@ module Logs
         puts "Ad Tag ID: #{conversion_hash[:network_ad_tag]}"
         puts "Campaign Cookie: #{conversion_hash[:campaign_cookie]}"
         puts "Creative Cookie: #{conversion_hash[:creative_cookie]}"
-        puts "---Strange UID problem!" if pixel_hash[:uid] != imp_hash[:uid]
-        puts "---Strange UID problem!" if conversion_hash[:uid] != imp_hash[:uid]
+        puts "---Strange UID problem!" if success_event_hash[:uid] != imp_event_hash[:uid]
+        puts "---Strange UID problem!" if conversion_hash[:uid] != imp_event_hash[:uid]
 
       when conversion_hash[:conversion_type] == "ctc"
 
         puts "Click Cookie: #{conversion_hash[:click_cookie]}"
-        puts "---Strange UID problem!" if pixel_hash[:uid] != imp_hash[:uid]
-        puts "---Strange UID problem!" if conversion_hash[:uid] != imp_hash[:uid]
-        if conversion_hash[:campaign_id].to_i  != campaign_id.to_i && imp_hash[:return_code] != "2002"
+        puts "---Strange UID problem!" if success_event_hash[:uid] != imp_event_hash[:uid]
+        puts "---Strange UID problem!" if conversion_hash[:uid] != imp_event_hash[:uid]
+        if conversion_hash[:campaign_id].to_i  != campaign_id.to_i && imp_event_hash[:return_code] != "2002"
           puts "---Unexpected campaign ID in the conversion log - #{conversion_hash[:campaign_id]}. Please compare with imp log results."
-        elsif conversion_hash[:campaign_id].to_i  != campaign_id.to_i && imp_hash[:return_code] == "2002"
+        elsif conversion_hash[:campaign_id].to_i  != campaign_id.to_i && imp_event_hash[:return_code] == "2002"
           puts "---Ad Tag Preview mode is messing up this test."
         end
 
@@ -365,7 +372,7 @@ module Logs
 
   def parse_pixel(pixel_hash, hash, adtag_id=0)
     site_id = hash['siteId']
-    if hash[:control_id] ==nil
+    if hash[:control_id] == nil
       campaign_id = hash['campaignId']
       campaign_name = hash['campaign_name']
     else
@@ -713,8 +720,8 @@ module Logs
 
   private
 
-  def get_target_imp_event(array)
-    target = array.find_all { |line| line =~ /\t#{hash[:test_tag]}\t/ && line =~ /\timp\t/ }
+  def get_target_imp_event(array, test_tag)
+    target = array.find_all { |line| line =~ /\t#{test_tag}\t/ && line =~ /\timp\t/ }
 
     # fallback...
     generic = array.find_all { | line | line =~ /\timp\t/ }

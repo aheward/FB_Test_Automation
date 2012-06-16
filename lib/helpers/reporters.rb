@@ -57,18 +57,14 @@ module Reporters
   end
 
   def pixel_report(hash)
-    site_id = hash['siteId']
-    campaign_name = hash['campaign_name']
-    campaign_id = hash['campaignId']
-    advertiser_id = hash['advertiserId']
-
-    puts "\nEvent time: #{hash[:pixel_cutoff]}\tPixel url: #{hash[:actual_pixel_url]}"
-    print "Pixel log, prior to impression or success"
-    if campaign_name != "control"
-      puts ":"
+    if hash[:control_id] == nil
+      campaign_name = hash['campaign_name']
     else
-      puts ". #{campaign_name.capitalize} campaign:"
+      campaign_name = "control"
     end
+    puts "\nEvent time: #{hash[:pixel_cutoff]}\tPixel url: #{hash[:actual_pixel_url]}"
+    puts "Pixel log, prior to impression or success. #{campaign_name.capitalize} campaign:"
+
     close_pixel_events = filtrate(hash[:raw_pixel_log], hash[:pixel_cutoff])
 
     puts close_pixel_events
@@ -76,7 +72,7 @@ module Reporters
     target_pixel_event = close_pixel_events.find { | line | line =~ /#{campaign_name}/i }
     begin
       split_pixel_log = split_log(target_pixel_event.chomp, "pixel")
-      parse_pixel(split_pixel_log, hash, advertiser_id)
+      parse_pixel(split_pixel_log, hash, hash[:test_tag])
     rescue NoMethodError
       hash.store(:error, FBErrorMessages::Pixels.no_pixel_fired)
     end
@@ -87,19 +83,19 @@ module Reporters
       affiliate = get_log($affiliate_log)
       affiliate_f = affiliate_filtrate(affiliate, hash[:pixel_cutoff])
       affiliate_hash = split_log(affiliate_f[:redirect][0], "affiliate_redirect")
-      puts "\nEvent time: #{hash[:pixel_cutoff]}\tAffiliate Redirect Entry:"
+      puts "\nAffiliate Redirect, approx time: #{hash[:pixel_cutoff]}"
       puts affiliate_f[:redirect]
       begin
         parse_affiliate(affiliate_hash, hash)
       rescue NoMethodError
-        hash.store(:error, FBErrorMessages::Logs.missing_affiliate_event(test_info[:actual_pixel_url]))
+        hash.store(:error, FBErrorMessages::Logs.missing_affiliate_event(hash[:actual_pixel_url]))
       end
     end
   end
 
   def affiliate_conversion_report(hash)
     if hash[:affiliate] == 0
-      puts "\nEvent time: #{hash[:success_cutoff]}\tAffiliate Conversion Entry:"
+      puts "\nAffiliate Conversion, approx time: #{hash[:success_cutoff]}"
       afl_conv_log = affiliate_filtrate(hash[:afl_conv_log], hash[:success_cutoff])
       puts afl_conv_log[:conversion]
       afl_conv_hash = split_log(afl_conv_log[:conversion][-1], "affiliate_conversion")
@@ -111,7 +107,7 @@ module Reporters
     # get impression log data...
     unless hash[:conv_type] == 'dtc' || hash[:conv_type] == 'otc'
 
-      puts "\nEvent time: #{hash[:imp_cutoff]}\tImpression link: #{hash[:creative_link]}"
+      puts "\nImpression link: #{hash[:creative_link]}\tApprox. time: #{hash[:imp_cutoff]}"
       puts "Click link: #{hash[:click_link]}" if hash[:click_link] != nil
       puts"Event(s):"
       puts hash[:imp_array]
@@ -139,46 +135,43 @@ module Reporters
     rescue NoMethodError
       hash.store(:error, FBErrorMessages::Pixels.no_success_event)
     end
-    puts "\nEvent time: #{hash[:success_cutoff]}\tSuccess pixel...  #{hash[:success_data][:link]}"
-    puts
+    puts "\nSuccess pixel...  #{hash[:success_data][:link]}\tApprox. time: #{hash[:success_cutoff]}"
     puts "CRV Expected:\t#{hash[:success_data][:crv]}\t\tOID Expected:\t#{hash[:success_data][:oid]}"
-    puts
     puts "Success events:"
     puts success_array
-    puts
     parse_pixel(hash[:success_pixel_hash], hash, hash[:test_tag])
   end
 
   def conversion_report(hash)
-    puts ""
-    puts "#{hash[:conv_type].upcase} conversion:"
+    puts "\n#{hash[:conv_type].upcase} conversion:"
     conv = (filtrate(hash[:conversion_log], hash[:success_cutoff]))[-1]
     puts conv
-    hash[:conversion_hash] = split_log(conv.chomp, "conversion")
-
-    parse_conversion(hash)
-
+    begin
+      hash[:conversion_hash] = split_log(conv.chomp, "conversion")
+      hash[:control_id] ? camp = hash[:control_id] : camp = hash['campaignId']
+      parse_conversion(hash, camp, hash[:split_imp_log], hash[:success_pixel_hash], hash[:conversion_hash], hash[:conv_type])
+    rescue NoMethodError
+      hash.store(:error, FBErrorMessages::Success.conversion_missing)
+    end
   end
 
   def loyalty_report(hash)
-    puts "\n\nEvent time: #{hash[:loyalty_cutoff]}\tLoyalty impression: #{hash[:creative_link]}\nEvent:"
+    puts "\nLoyalty impression: #{hash[:creative_link]}\tApprox. time: #{hash[:loyalty_cutoff]}"
     puts hash[:loyalty_imp_array]
     parse_impression(hash[:split_loyalty_imp_log], hash[:loyalty_id], hash)
 
-    puts "\n\nEvent time:#{hash[:loyalty_success_cutoff]}\n\nLoyalty success pixel:"
-    puts filtered_loyalty_success_pixel_log
-    parse_pixel(loyalty_success_pixel_hash, site_id, loyalty_id, "loyalty.campaign", advertiser_id, ad_tags[0])
+    puts "\nLoyalty success, approx time: #{hash[:loyalty_success_cutoff]}"
+    puts hash[:filtered_loyalty_success]
+    parse_pixel(hash[:loyalty_success_pixel_hash], hash, hash[:test_tag])
 
-    puts ""
-    puts "Conversion log for Loyalty:"
-    puts filtered_loyalty_conversion_log
-    parse_conversion(loyalty_conversion_hash, conversion, loyalty_success_pixel_hash, loyalty_imp_hash, loyalty_id, site_id)
+    puts "\n#{hash[:loyalty_conv_type].upcase} Conversion log for Loyalty:"
+    puts hash[:filtered_loyalty_conversion]
+    parse_conversion(hash, hash[:loyalty_id], hash[:split_loyalty_imp_log], hash[:loyalty_success_pixel_hash], hash[:loyalty_conversion_hash], hash[:loyalty_conv_type])
   end
 
   def product_report(hash)
-    if hash["campaign_name"] =~ /^dynamic$/i
-      puts ""
-      puts "Product log:"
+    if hash["campaign_name"] =~ /^dynamic$/i && hash[:control_id] == nil
+      puts "\nProduct log:"
       prod = product_filtrate(hash[:product_log], hash[:pixel_cutoff])
       puts prod
       product_hash = split_log(prod[-1], "products")
@@ -209,9 +202,7 @@ module Reporters
     self.goto DUMMY_PAGE
     browser_cookies = self.cookies.to_a
     expires = browser_cookies[0][:expires]
-    puts
-    puts "Cookies"
-    puts "============"
+    puts "\nCookies:"
     COOKIES.each do |cookie|
       print cookie.upcase + ": "
       cookie_hash = browser_cookies.find { |item| item[:name]==cookie }

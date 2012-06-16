@@ -49,6 +49,8 @@ end
 # available as a method.
 module FetchBackCookies
 
+  include FetchBackConstants
+
   COOKIES.each do |cookie|
     define_method(cookie) { keep_if(cookie) }
   end

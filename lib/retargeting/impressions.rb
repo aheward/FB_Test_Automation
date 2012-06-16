@@ -36,6 +36,12 @@ module Impressions
     hash[:loyalty_cutoff] = calc_offset_time(0)
     self.goto(hash[:creative_link])
     sleep $imp_seconds
+
+    if hash[:loyalty_conv_type] =~ /ctc/i
+      hash[:loyalty_click_link] = self.clicktrack(hash[:url])
+      self.goto(hash[:loyalty_click_link])
+    end
+
     get_loyalty_imp_log(hash)
 
   end
