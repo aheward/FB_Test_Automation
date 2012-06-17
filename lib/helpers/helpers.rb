@@ -4,42 +4,42 @@ module FBHelpers
     # Used to intersperse visiting of sites and ads that are NOT the site being tested.
     # The idea is to make sure that events are properly logged to the target site and not to the
     # "dirty" sites.
+    unless count == 0
+      plinks = product_urls_for_site(site_id)
+      plinks.shuffle!
 
-    plinks = product_urls_for_site(site_id)
-    plinks.shuffle!
+      sites = plinks[0..30]
 
-    first_pass = plinks[0..30]
-
-    first_pass.each do | site |
-      #get ad tags for the campaign...
-      site[2] = ad_tags_for_campaign(site[1])
-    end
-
-    first_pass.delete_if { |site| site[2] == nil } # Delete the site entry if there aren't active ad tags
-
-    to_use = first_pass[0..(count-1)]
-
-    to_use.each do | site |
-
-      #get pixeled...
-      begin
-        self.goto(site[0])
-      rescue
-        # Do nothing...
+      sites.each do | site |
+        #get ad tags for the campaign...
+        site[2] = ad_tags_for_campaign(site[1])
       end
-      sleep(1)
 
-      #serve imp...
-      begin
-        self.goto(tagify(site[2][rand(site[2].length)]))
-      rescue Timeout::Error
-        #do nothing
+      sites.delete_if { |site| site[2] == nil } # Delete the site entry if there aren't active ad tags
+
+      to_use = sites[0..(count-1)]
+
+      to_use.each do | site |
+
+        #get pixeled...
+        begin
+          self.goto(site[0])
+        rescue
+          # Do nothing...
+        end
+        sleep(1)
+
+        #serve imp...
+        begin
+          self.goto(tagify(site[2][rand(site[2].length)]))
+        rescue Timeout::Error
+          #do nothing
+        end
+        # pause for selected time...
+        sleep(pause)
+
       end
-      # pause for selected time...
-      sleep(pause)
-
     end
-
   end
 
   def site_merit_values(hash)
