@@ -84,9 +84,9 @@ module Pixel
     self.goto(pixel_link)
     sleep 3 if hash[:affiliate] == 0 # Wait extra time for redirect when using affiliate link.
     sleep 2 # Have to wait until pixel should have fired
-    if self.html =~ /pixel.fetchback.com/i
-      sleep(1) # Hopefully we've been pixeled
-    else
+    self.goto DUMMY_PAGE
+    sit_cookie = self.sit[:value]
+    unless sit_cookie =~ /_#{hash['siteId']}:/
       # We need to force the pixel
       puts "Couldn't confirm the pixel was on the target page--meaning here:\n#{pixel_link}\nThis doesn't necessarily mean it wasn't! It's just\nthat 'pixel.fetchback.com' wasn't found in\nthe page HTML."
       key = "&fb_key="
@@ -110,11 +110,8 @@ module Pixel
         self.goto(pixel_link)
         sleep 2
       end
-
     end
     hash.store(:actual_pixel_url, pixel_link)
-    self.goto DUMMY_PAGE
-    $unique_id = self.unique_identifier
 
     # Get contents of pixel log...
     get_pixel_log(hash)

@@ -37,7 +37,7 @@ class FBConfig
          info = {:link=>h + "www#{fb}",
           :ip=>prod_imp,
           :imp1 =>h + prod_imp,
-          :pix1 =>@@config['prod_pixel'],
+          :pix1 =>h + @@config['prod_pixel'],
           :imp2 =>"",
           :pix2=>""}
        when 'qa-fido'

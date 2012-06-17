@@ -10,6 +10,7 @@ module FunctionalTests
 
         visit CookieEditor do |pg|
           pg.set_control_cookie(test_info[:control_perc])
+          $unique_id = @browser.unique_identifier
         end
 
         @browser.dirty(test_info['siteId'], rand(3), 2)
@@ -120,13 +121,22 @@ module FunctionalTests
 
         visit CookieEditor do |pg|
           pg.set_control_cookie(test_info[:control_perc])
+          $unique_id = @browser.unique_identifier
         end
+
+
+
+
+      puts $unique_id
+
+
+
+
 
         @browser.get_pixeled(test_info)
 
         conversion_report_header(test_info)
         network_ad_tags_report(test_info)
-        affiliate_redirect_report(test_info)
         if test_info.data_error?
           tested_sites << test_info["siteId"]
           puts test_info[:error]
@@ -155,7 +165,6 @@ module FunctionalTests
 
         @browser.show_cookies
         @browser.cookies.clear
-      end
 
     end
     @browser.close

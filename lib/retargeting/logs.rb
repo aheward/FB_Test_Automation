@@ -73,7 +73,6 @@ module Logs
 
   def get_log(log)
     # grabs the desired log file for analysis
-
     log1 = case(log)
              when $pixel_log then $pixel_log1
              when $imp_log then $imp_log1
@@ -86,7 +85,7 @@ module Logs
            end
 
     begin
-      log_entries = open(log).read #URI.parse(log).read
+      log_entries = open(log).read
     rescue SocketError
       puts FBErrorMessages::Logs.unable_to_open_log_file(log)
       exit

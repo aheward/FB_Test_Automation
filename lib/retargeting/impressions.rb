@@ -28,6 +28,7 @@ module Impressions
         self.goto(hash[:click_link])
 
       end
+
       get_imp_log(hash)
 
     end

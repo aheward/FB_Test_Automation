@@ -46,7 +46,7 @@ module Reporters
       puts "Control percentage: #{control_perc}%"
     else
       puts "Site's Conversion window: #{hash["conversionWindow"]} days"
-      puts "\n#{conversion_type.upcase} TEST........."
+      puts "\n#{conversion_type.upcase} TEST........." unless conversion_type == nil
     end
   end
 
