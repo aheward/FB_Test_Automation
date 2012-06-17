@@ -204,7 +204,7 @@ module Logs
 
   # This method takes the hash of the conversion log (made using the split_log method)
   # and checks that the event matches expectations by comparing it to all the other data passed into it.
-  def parse_conversion(test_info_hash, campaign_id, imp_event_hash, success_event_hash, conversion_hash, conversion_type, merit30= -1, merit7=50, merit3=25, merit1=5)
+  def parse_conversion(test_info_hash, campaign_id, imp_event_hash, success_event_hash, conversion_hash, conversion_type)
     site_id = test_info_hash['siteId']
 
     puts "Latest impression time: #{Time.at(conversion_hash[:latest_imp_time].to_i)}" if conversion_hash[:latest_imp_time].to_i != 0
@@ -241,20 +241,20 @@ module Logs
         imp_time = Time.now - Time.at(conversion_hash[:latest_imp_time].to_i)
         puts "Impression offset: ~#{(imp_time/86400).to_i} days"
 
-        unless merit30 == -1
+        if test_info_hash[:merit30].class == Float
           case(imp_time)
             when 604800.0..7776000.0
-              merit = merit30
-              puts "Expected percentage: #{merit30}%"
+              merit = test_info_hash[:merit30]
+              puts "Expected percentage: #{test_info_hash[:merit30]}%"
             when 259200.0..604800.0 then
-              merit =  merit7
-              puts "Expected percentage: #{merit7}%"
+              merit = test_info_hash[:merit7]
+              puts "Expected percentage: #{test_info_hash[:merit7]}%"
             when 86400.00..259200.0 then
-              merit =  merit3
-              puts "Expected percentage: #{merit3}%"
+              merit = test_info_hash[:merit3]
+              puts "Expected percentage: #{test_info_hash[:merit3]}%"
             when 0.0..86400.0 then
-              merit =  merit1
-              puts "Expected percentage: #{merit1}%"
+              merit = test_info_hash[:merit1]
+              puts "Expected percentage: #{test_info_hash[:merit1]}%"
             else
               100
           end
@@ -534,12 +534,6 @@ module Logs
       when "5003" then "Hover?"
       else "No clue what this return code means!"
     end
-  end
-
-  # This method is obsolete but I'm keeping it around because I
-  # think it's still used in one or more of the "live" scripts.
-  def split_log_old(array_entry)
-    array_entry.split("\t")
   end
 
   # This method converts a log entry into a hash object according to the

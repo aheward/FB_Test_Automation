@@ -4,20 +4,22 @@ module Impressions
     unless hash[:conv_type] == "dtc" || hash[:conv_type] == "otc"
       active_tags = hash[:active_ad_tags]
 
-      if $extra_imp_count >= active_tags.length
-        count = active_tags.length - 1
-      else
-        count = $extra_imp_count
-      end
-      unless count == 0
-        1.upto(count) do |x|
-          self.goto(tagify(active_tags[x]))
-          sleep $imp_seconds
+      if hash[:merit30].class == NilClass
+        if $extra_imp_count >= active_tags.length
+          count = active_tags.length - 1
+        else
+          count = $extra_imp_count
         end
+        unless count == 0
+          1.upto(count) do |x|
+            self.goto(tagify(active_tags[x]))
+            sleep $imp_seconds
+          end
+        end
+        sleep 2 # Some extra time to help separate test event from dummies
       end
-      sleep 2 # Some extra time to help separate test event from dummies
-      hash[:imp_cutoff] = calc_offset_time(0)
 
+      hash[:imp_cutoff] = calc_offset_time(0)
       self.goto(hash[:creative_link])
       sleep $imp_seconds
 
@@ -27,7 +29,6 @@ module Impressions
 
       end
       get_imp_log(hash)
-
 
     end
   end

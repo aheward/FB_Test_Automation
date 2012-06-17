@@ -123,11 +123,12 @@ module Pixel
   def get_success(hash)
     hash[:success_cutoff] = calc_offset_time(2)
 
-    if rand(15) > 0
-      crv = "#{rand(500)}"+".#{rand(10)}"+"#{rand(10)}"
+    if TEST_TYPE == :rt
+      rand(15) > 0 ? crv = "#{rand(500)}"+".#{rand(10)}"+"#{rand(10)}" : crv = (rand(100) + 1).to_s
     else
-      crv = (rand(100) + 1).to_s
+      crv = "0.01"
     end
+
     oid = random_nicelink(16)
     success_link = "#{PIXEL_SERVER}pdj?cat=#{random_nicelink}&name=success&sid=#{hash['siteId']}" + "&crv=#{crv}" + "&oid=#{oid}"
     self.goto(success_link)

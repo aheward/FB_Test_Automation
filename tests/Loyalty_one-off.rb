@@ -23,10 +23,10 @@ PIXEL_PAGE = "http://www.enviroinks.com/Compatible-Dell-JP453-Series-11-HIGH-YIE
 TEST_TYPE = :rt
 require '../config/conversion_env'
 
-test_site = data_for_a_campaign(campaign_name, test_site)
-set_up_one_site(test_site[0])
-test_site[0][:loyalty_id] = cpid_from_sid_and_cpname(test_site[0]['siteId'], "loyalty.campaign")
-test_site[0][:loyalty_conv_type] = loyalty_conversion
-regression_conversion_test(test_site, [conversion_type])
+test_data = data_for_a_campaign(campaign_name, test_site)
+set_up_one_site(test_data[0])
+test_data[0][:loyalty_id] = cpid_from_sid_and_cpname(test_data[0]['siteId'], "loyalty.campaign")
+test_data[0][:loyalty_conv_type] = loyalty_conversion
+conversion_test(test_data, [conversion_type])
 
 

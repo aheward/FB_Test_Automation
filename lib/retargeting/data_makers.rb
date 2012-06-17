@@ -70,6 +70,7 @@ module DataMakers
     sites_hashes = site_data(test_sites)
     sites_hashes.each do |site|
       get_good_campaign_data(site)
+      site_merit_values(site)
       add_control_perc(site)
     end
     clean_up(sites_hashes, count)
@@ -101,7 +102,7 @@ module DataMakers
       site_hash[:account_id] = 0
     end
     add_control_perc(site_hash)
-    site_hash[:url] = make_pixel_link(site_hash)
+    make_pixel_link(site_hash)
     pick_affiliate_or_regular(site_hash)
   end
 
@@ -116,10 +117,7 @@ module DataMakers
       hash.store(:network_name, tag_data[1])
       hash.store(:network_id, tag_data[2])
     rescue NoMethodError
-      hash[:account_id] = 0
-    end
-    if hash[:active_ad_tags].class != Array
-      hash[:account_id] = 0
+      hash.store(:account_id, 0)
     end
   end
 

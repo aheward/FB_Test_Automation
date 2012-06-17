@@ -55,7 +55,7 @@ module FBHelpers
         hash.store(y, (merit_values[x][1].to_f * 100))
       end
     rescue NoMethodError
-      "Error"
+      hash.store(:error=>"Unable to find merit values for site.")
     end
   end
 

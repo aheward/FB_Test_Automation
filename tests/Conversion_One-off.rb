@@ -7,7 +7,7 @@
 # Obviously the names must match EXACTLY...
 
 conversion_type = "dtc" # Must be lower-case, in quotes, and match dtc, vtc, or ctc
-test_site       = "Kansas City Steaks"
+test_site_name  = "Kansas City Steaks"
 campaign_name   = "landing"
 
 # If you need to test a special pixel page, define it here.
@@ -20,7 +20,7 @@ PIXEL_PAGE = ""
 TEST_TYPE = :rt
 require '../config/conversion_env'
 
-test_site = data_for_a_campaign(campaign_name, test_site)
+test_site = data_for_a_campaign(campaign_name, test_site_name)
 set_up_one_site(test_site[0])
 
-regression_conversion_test(test_site, [conversion_type])
+conversion_test(test_site, [conversion_type])

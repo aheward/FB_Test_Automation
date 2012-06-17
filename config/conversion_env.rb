@@ -6,7 +6,7 @@ require 'helpers/sql_commands'
 require 'helpers/reporters'
 require 'helpers/helpers'
 require 'retargeting/cipher'
-require 'retargeting/conversions'
+require 'retargeting/functional_tests'
 require 'retargeting/cookies'
 require 'retargeting/data_makers'
 require 'retargeting/impressions'
@@ -20,7 +20,7 @@ include Pixel
 include Impressions
 include SQLCommands
 include DataMakers
-include Conversions
+include FunctionalTests
 include Reporters
 
 @config = FBConfig.new

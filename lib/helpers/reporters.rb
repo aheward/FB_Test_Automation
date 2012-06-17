@@ -45,6 +45,7 @@ module Reporters
     if campaign_name == "control"
       puts "Control percentage: #{control_perc}%"
     else
+      puts "Site's Conversion window: #{hash["conversionWindow"]} days"
       puts "\n#{conversion_type.upcase} TEST........."
     end
   end

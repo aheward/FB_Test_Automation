@@ -9,4 +9,4 @@ require '../config/conversion_env'
 
 test_sites = get_control_test_data(10)
 
-regression_conversion_test(test_sites, %w{vtc})
+conversion_test(test_sites, %w{vtc})

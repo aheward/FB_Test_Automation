@@ -9,4 +9,4 @@ require '../config/conversion_env'
 
 test_data = get_dynamic_test_data(10)
 
-regression_conversion_test(test_data, CONVERSIONS)
+conversion_test(test_data, CONVERSIONS)

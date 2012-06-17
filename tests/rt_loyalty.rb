@@ -13,4 +13,4 @@ require '../config/conversion_env'
 
 test_sites = get_loyalty_test_data(5)
 
-regression_conversion_test(test_sites, CONVERSIONS)
+conversion_test(test_sites, CONVERSIONS)
