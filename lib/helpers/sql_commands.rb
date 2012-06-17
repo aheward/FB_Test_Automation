@@ -23,6 +23,16 @@ module SQLCommands
                         FROM creative_data);|)
   end
 
+  def uat_site_ids
+    SITES_DB.execute(%|SELECT siteId
+                        FROM site_data
+                        WHERE siteId
+                        IN (SELECT siteId
+                        FROM campaign_data
+                        WHERE disableDirectPdc = '1' and siteId
+                        IN (SELECT siteId FROM creative_data));|)
+  end
+
   def site_data(site_ids, as_hash=true)
     SITES_DB.results_as_hash = as_hash
     SITES_DB.execute(%|SELECT siteId, name site_name, url, cpa, cpe, cpm, cpc,

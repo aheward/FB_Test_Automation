@@ -91,6 +91,19 @@ module DataMakers
     clean_up(test_sites, count)
   end
 
+  def get_uat_test_data
+    @blacklist = BlacklistedSites.new.sites
+    uat_sites = uat_site_ids
+    uat_sites.flatten!
+    uat_sites.delete_if { |item| @blacklist.include?(item) }
+    test_sites = site_data(uat_sites)
+    test_sites.each do |site|
+      get_good_campaign_data(site)
+      add_control_perc(site)
+    end
+    clean_up(test_sites, test_sites.length)
+  end
+
   def set_up_one_site(site_hash)
     get_ad_tags_data(site_hash)
     if site_hash.data_error?
