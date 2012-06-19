@@ -85,7 +85,11 @@ module Pixel
     sleep 3 if hash[:affiliate] == 0 # Wait extra time for redirect when using affiliate link.
     sleep 2 # Have to wait until pixel should have fired
     self.goto DUMMY_PAGE
-    sit_cookie = self.sit[:value]
+    begin
+      sit_cookie = self.sit[:value]
+    rescue NoMethodError
+      sit_cookie = "bunk"
+    end
     unless sit_cookie =~ /_#{hash['siteId']}:/
       # We need to force the pixel
       puts "Couldn't confirm the pixel was on the target page--meaning here:\n#{pixel_link}\nThis doesn't necessarily mean it wasn't! It's just\nthat 'pixel.fetchback.com' wasn't found in\nthe page HTML."
