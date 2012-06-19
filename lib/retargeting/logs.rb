@@ -101,7 +101,13 @@ module Logs
       log_entries << log_entries1
     end
 
-    log_entries
+    
+    
+    puts "I got the log entries:"
+    puts log_entries    
+    
+
+    return log_entries
 
   end
 
@@ -112,6 +118,14 @@ module Logs
   def get_imp_log(hash)
     hash.store(:raw_imp_log, get_log($imp_log))
     hash.store(:imp_array, filtrate(hash[:raw_imp_log], hash[:imp_cutoff]))
+    
+    
+    
+    puts "This is the filtered imp log:"
+    hash[:imp_array]
+    
+    
+    
     imp_line = get_target_imp_event(hash[:imp_array], hash[:test_tag])
     begin
       hash.store(:split_imp_log, split_log(imp_line.chomp, "impression"))
@@ -121,7 +135,7 @@ module Logs
   end
 
   def get_loyalty_imp_log(hash)
-    hash.store(:raw_loyalty_imp_log, get_log($imp_log))
+    hash.store(:raw_loyalty_imp_log, get_log($imp_log)  
     hash.store(:loyalty_imp_array, filtrate(hash[:raw_loyalty_imp_log], hash[:loyalty_cutoff]))
     imp_line = get_target_imp_event(hash[:loyalty_imp_array], hash[:test_tag])
     begin
