@@ -135,7 +135,7 @@ module Logs
   end
 
   def get_loyalty_imp_log(hash)
-    hash.store(:raw_loyalty_imp_log, get_log($imp_log)  
+    hash.store(:raw_loyalty_imp_log, get_log($imp_log))  
     hash.store(:loyalty_imp_array, filtrate(hash[:raw_loyalty_imp_log], hash[:loyalty_cutoff]))
     imp_line = get_target_imp_event(hash[:loyalty_imp_array], hash[:test_tag])
     begin
