@@ -8,10 +8,9 @@ module FBErrorMessages
     end
 
     def self.no_target_events_past_cutoff(cutoff_time)
-      %|The log doesn't have any expected events that
-      occur after the specified cutoff time (#{cutoff_time}).\n\n
+      %|\nThe log doesn't have any expected events that occur after the specified cutoff time (#{cutoff_time}).\n\n
       You'll want to check the logs manually.
-      "Make sure everything's in an Active status, including\nthe Ad Tag and Network.
+      Make sure everything's in an Active status, including the Ad Tag and Network.
       When that's confirmed, it's time to start suspecting
       there's a bug, here.|
     end

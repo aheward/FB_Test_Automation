@@ -7,7 +7,7 @@ module Logs
     items_i_did = [] # defining the list of all log items you're responsible for
 
     if log !~ /#{$local_ip}/
-      FBErrorMessages::Logs.no_events_with_ip($local_ip)
+      puts FBErrorMessages::Logs.no_events_with_ip($local_ip)
     end
 
     log.each_line do | log_entry |
@@ -32,7 +32,7 @@ module Logs
 
     if the_items_we_want[:redirect].empty? == true && the_items_we_want[:conversion].empty? == true  # Want to try to make sure the list isn't totally empty
       puts "Problem with affiliate log!"
-      FBErrorMessages::Logs.no_target_events_past_cutoff(cutoff_time)
+      puts FBErrorMessages::Logs.no_target_events_past_cutoff(cutoff_time)
     end
 
     the_items_we_want
@@ -45,8 +45,8 @@ module Logs
 
     items_i_did = [] # defining the list of all log items you're responsible for
 
-    if log !~ /#{$local_ip}/
-      FBErrorMessages::Logs.no_events_with_ip($local_ip)
+    if log !~ /\t#{$local_ip}\t/
+      puts FBErrorMessages::Logs.no_events_with_ip($local_ip)
     end
 
     log.each_line do | log_entry |
@@ -65,7 +65,7 @@ module Logs
     end
 
     if the_items_we_want.length == 0 # Want to try to make sure the list isn't totally empty
-      FBErrorMessages::Logs.no_target_events_past_cutoff(cutoff_time)
+      puts FBErrorMessages::Logs.no_target_events_past_cutoff(cutoff_time)
     end
 
     the_items_we_want
@@ -113,6 +113,18 @@ module Logs
 
   def get_pixel_log(hash)
     hash.store(:raw_pixel_log, get_log($pixel_log))
+    if hash[:control_id] == nil
+      campaign_name = hash['campaign_name']
+    else
+      campaign_name = "control"
+    end
+    hash[:close_pixel_events] = filtrate(hash[:raw_pixel_log], hash[:pixel_cutoff])
+    hash[:target_pixel_event] = hash[:close_pixel_events].find { | line | line =~ /#{campaign_name}/i }
+    begin
+      hash[:split_pixel_log] = split_log(hash[:target_pixel_event].chomp, "pixel")
+    rescue NoMethodError
+      hash.store(:error, FBErrorMessages::Pixels.no_pixel_fired)
+    end
   end
 
   def get_imp_log(hash)
@@ -718,7 +730,12 @@ module Logs
 
   # this method makes an impression link based on the passed ad tag id.
   def tagify(ad_tag_id)
-    "http://imp.fetchback.com/serve/fb/imp?tid=#{ad_tag_id}"
+    if TEST_TYPE == :rt
+      link = "http://imp.fetchback.com"
+    else
+      link = "http://#{$test_site_ip}"
+    end
+    link + "/serve/fb/imp?tid=#{ad_tag_id}"
   end
 
   def calc_offset_time(local_adjustment)

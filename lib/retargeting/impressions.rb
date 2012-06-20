@@ -19,9 +19,30 @@ module Impressions
         sleep 2 # Some extra time to help separate test event from dummies
       end
 
-      hash[:imp_cutoff] = calc_offset_time(0)
+      hash[:imp_cutoff] = calc_offset_time(FBConfig.get :imp_event)
+
+
+
+
+
+      puts hash[:imp_cutoff]
+
+
+
+
+
+
       self.goto(hash[:creative_link])
       sleep $imp_seconds
+
+
+
+
+      exit
+
+
+
+
 
       if hash[:conv_type] =~ /ctc/i
         hash[:click_link] = self.clicktrack(hash[:url])
@@ -35,7 +56,7 @@ module Impressions
   end
 
   def get_loyalty_impified(hash)
-    hash[:loyalty_cutoff] = calc_offset_time(0)
+    hash[:loyalty_cutoff] = calc_offset_time(FBConfig.get :loyalty_imp)
     self.goto(hash[:creative_link])
     sleep $imp_seconds
 

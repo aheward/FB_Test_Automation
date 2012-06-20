@@ -30,7 +30,7 @@ module FunctionalTests
         @browser.get_impified(test_info)
         if test_info.data_error?
           puts test_info[:error]
-          break
+          next
         end
 
         if test_info[:merit1].class == Float
@@ -61,7 +61,7 @@ module FunctionalTests
         pixel_report(test_info)
         if test_info.data_error?
           puts test_info[:error]
-          break
+          next
         end
 
         impression_report(test_info)
@@ -124,16 +124,32 @@ module FunctionalTests
           $unique_id = @browser.unique_identifier
         end
 
-
-
-
-      puts $unique_id
-
-
-
-
-
         @browser.get_pixeled(test_info)
+
+
+
+
+
+
+
+
+      puts "Your UID:"
+      puts $unique_id
+      outs "Your Local IP:"
+      puts $local_ip
+      puts "This should be the target pixel event:"
+      puts test_info[:target_pixel_event]
+
+      puts "This is the creative link being used:"
+      puts test_info[:creative_link]
+
+
+
+
+
+
+
+
 
         conversion_report_header(test_info)
         network_ad_tags_report(test_info)

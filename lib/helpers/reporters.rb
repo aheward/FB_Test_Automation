@@ -58,25 +58,10 @@ module Reporters
   end
 
   def pixel_report(hash)
-    if hash[:control_id] == nil
-      campaign_name = hash['campaign_name']
-    else
-      campaign_name = "control"
-    end
     puts "\nEvent time: #{hash[:pixel_cutoff]}\tPixel url: #{hash[:actual_pixel_url]}"
-    puts "Pixel log, prior to impression or success. #{campaign_name.capitalize} campaign:"
-
-    close_pixel_events = filtrate(hash[:raw_pixel_log], hash[:pixel_cutoff])
-
-    puts close_pixel_events
-
-    target_pixel_event = close_pixel_events.find { | line | line =~ /#{campaign_name}/i }
-    begin
-      split_pixel_log = split_log(target_pixel_event.chomp, "pixel")
-      parse_pixel(split_pixel_log, hash, hash[:test_tag])
-    rescue NoMethodError
-      hash.store(:error, FBErrorMessages::Pixels.no_pixel_fired)
-    end
+    puts "Pixel log, prior to impression or success:"
+    puts hash[:close_pixel_events]
+    parse_pixel(hash[:split_pixel_log], hash, hash[:test_tag])
   end
 
   def affiliate_redirect_report(hash)

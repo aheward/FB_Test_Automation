@@ -22,6 +22,16 @@ offset: 14402
 # each creative served in tests...
 imp_viewing_time: 8
 
+# Individual offset adjustments
+# Adjust these if you are consistently missing
+# events in the logs because the expected event time
+# is too late...
+pixel_event: 1
+imp_event: 1
+conversion_event: 1
+loyalty_imp: 1
+loyalty_conversion: 1
+
 # Please enter the number of EXTRA ads you want to view
 # per impression test. Note that if this number
 # exceeds the total of active ad tags for the site,
