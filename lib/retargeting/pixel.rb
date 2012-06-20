@@ -87,6 +87,7 @@ module Pixel
     begin
       sit_cookie = self.sit[:value]
     rescue NoMethodError
+      puts "NOTE that I went to the target site pixel link but no SIT cookie was created!"
       sit_cookie = "bunk"
     end
     unless sit_cookie =~ /_#{hash['siteId']}:/
@@ -118,19 +119,6 @@ module Pixel
 
     # Get contents of pixel log...
     get_pixel_log(hash)
-
-
-    # DEBUG CODE
-
-    puts "Your pixel cutoff time:"
-    puts hash[:pixel_cutoff]
-
-
-
-
-
-
-
   end
 
   def get_success(hash)

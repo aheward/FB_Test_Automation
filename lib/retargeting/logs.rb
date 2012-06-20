@@ -100,15 +100,6 @@ module Logs
       end
       log_entries << log_entries1
     end
-
-    
-    
-    puts "I got the log entries:"
-    puts log_entries    
-    
-
-    return log_entries
-
   end
 
   def get_pixel_log(hash)
@@ -120,25 +111,97 @@ module Logs
     end
     hash[:close_pixel_events] = filtrate(hash[:raw_pixel_log], hash[:pixel_cutoff])
     hash[:target_pixel_event] = hash[:close_pixel_events].find { | line | line =~ /#{campaign_name}/i }
+
+
+
+
+    # DEBUG CODE  =====================================
+
+    puts "Your pixel cutoff time:"
+    puts hash[:pixel_cutoff]
+    puts
+    puts "The pixel link used for the test:"
+    puts hash[:actual_pixel_url]
+    puts
+    puts "Pixel events that occurred after the cutoff time:"
+    puts hash[:close_pixel_events]
+    puts
+    puts "What the code determined as the relevant pixel event:"
+    puts hash[:target_pixel_event]
+    puts
+
+
+
+    # ====================================================
+
+
+
+
     begin
       hash[:split_pixel_log] = split_log(hash[:target_pixel_event].chomp, "pixel")
     rescue NoMethodError
       hash.store(:error, FBErrorMessages::Pixels.no_pixel_fired)
     end
+
   end
 
   def get_imp_log(hash)
     hash.store(:raw_imp_log, get_log($imp_log))
+
+
+
+
+
+
+    # DEBUG CODE ==========================
+
+    puts "This is your imp cutoff time:"
+    puts hash[:imp_cutoff]
+    puts "This is your raw imp log:"
+    puts hash[:raw_imp_log]
+    puts
+
+    # =====================================
+
+
+
+
+
     hash.store(:imp_array, filtrate(hash[:raw_imp_log], hash[:imp_cutoff]))
-    
-    
-    
-    puts "This is the filtered imp log:"
-    hash[:imp_array]
-    
-    
-    
+
+
+
+
+
+    # DEBUG CODE ==========================
+
+    puts "This is your filtered imp log"
+    puts "This filters by your local ip address, your cookie's UID,"
+    puts "and the estimated event time."
+    puts hash[:imp_array]
+    # =====================================
+
+
+
+
+
+
     imp_line = get_target_imp_event(hash[:imp_array], hash[:test_tag])
+
+
+
+    # DEBUG CODE ==========================
+    puts
+    puts "This is your target imp event"
+    puts "If this is blank then the filtering isn't working right"
+    puts "Assuming the right event was there in the first"
+    puts "place..."
+    puts imp_line
+    # =====================================
+
+
+
+
     begin
       hash.store(:split_imp_log, split_log(imp_line.chomp, "impression"))
     rescue NoMethodError

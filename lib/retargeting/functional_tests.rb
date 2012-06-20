@@ -6,11 +6,60 @@ module FunctionalTests
     test_sites.each do | test_info |
       next if tested_sites.include? test_info["siteId"] # Line to ensure skipping a site if it's already been tested
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      # DEBUG INFO =========================================
+      puts
+      puts "Test Data:"
+      test_info.each { |k, v| puts "#{k} is #{v}"}
+      puts
+      # ===================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       conversion_types.each do |conv_type|
 
         visit CookieEditor do |pg|
           pg.set_control_cookie(test_info[:control_perc])
           $unique_id = @browser.unique_identifier
+
+
+          # DEBUG CODE ===========================
+
+          puts "Your UID:"
+          puts $unique_id
+
+          # =====================================
+
         end
 
         @browser.dirty(test_info['siteId'], rand(3), 2)
@@ -130,7 +179,7 @@ module FunctionalTests
 
 
 
-
+      # DEBUG CODE ======================
 
 
       puts "Your UID:"
@@ -146,7 +195,7 @@ module FunctionalTests
 
 
 
-
+      # =====================================
 
 
 

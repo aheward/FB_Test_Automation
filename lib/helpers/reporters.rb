@@ -160,7 +160,11 @@ module Reporters
       puts "\nProduct log:"
       prod = product_filtrate(hash[:product_log], hash[:pixel_cutoff])
       puts prod
-      product_hash = split_log(prod[-1], "products")
+      begin
+        product_hash = split_log(prod[-1], "products")
+      rescue
+        puts "Apparently no product log event for this.\nIs that right? Please check your offsets and\nmake sure they're not cutting out appropriate events."
+      end
       #puts "product hash:"
       #p product_hash
       begin
