@@ -31,7 +31,7 @@ module Logs
     end
 
     if the_items_we_want[:redirect].empty? == true && the_items_we_want[:conversion].empty? == true  # Want to try to make sure the list isn't totally empty
-      puts "Problem with affiliate log!"
+      puts "--- Problem with affiliate log! (unless this was your first affiliate test in a while)"
       puts FBErrorMessages::Logs.no_target_events_past_cutoff(cutoff_time)
     end
 
@@ -45,7 +45,7 @@ module Logs
 
     items_i_did = [] # defining the list of all log items you're responsible for
 
-    if log !~ /\t#{$local_ip}\t/
+    if log !~ /\s#{$local_ip}\s/
       puts FBErrorMessages::Logs.no_events_with_ip($local_ip)
     end
 
@@ -53,6 +53,10 @@ module Logs
       if log_entry.include?($unique_id)
         items_i_did << log_entry
       end
+    end
+
+    if items_i_did.length == 0
+      puts FBErrorMessages::Logs.no_uid_events
     end
 
     the_items_we_want = [] # Narrowing down the list to only the items for the last test

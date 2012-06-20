@@ -15,6 +15,10 @@ module FBErrorMessages
       there's a bug, here.|
     end
 
+    def self.no_uid_events
+      "Couldn't find any events in the log with your UID in them."
+    end
+
     def self.missing_affiliate_event(pixel_url)
       %|Expected log event missing!\nCheck that the pixel event fired,\nthat the right pixel was used,\nand whether the affiliate log has expected contents.\n\nPixel URL used: #{pixel_url}\n\nLink(s) to your Affiliate log(s):\n#{$affiliate_log}\n#{$affiliate_log1}|
     end

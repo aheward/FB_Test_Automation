@@ -21,28 +21,8 @@ module Impressions
 
       hash[:imp_cutoff] = calc_offset_time(FBConfig.get :imp_event)
 
-
-
-
-
-      puts hash[:imp_cutoff]
-
-
-
-
-
-
       self.goto(hash[:creative_link])
       sleep $imp_seconds
-
-
-
-
-      exit
-
-
-
-
 
       if hash[:conv_type] =~ /ctc/i
         hash[:click_link] = self.clicktrack(hash[:url])

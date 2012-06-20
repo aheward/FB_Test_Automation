@@ -25,20 +25,20 @@ module Pixel
     else
               if campaign_name =~ /dynamic/i
 
-                unless product_url == "empty"
-                  @product_url
-                else
+                if @product_url == "empty"
                   site_url
+                else
+                  @product_url
                 end
 
                 # If we're testing a landing campaign in a site that is revshare,
                 # then we can still use the product link for testing...
               elsif revshare.to_f > 0 && campaign_name == "landing"
 
-                unless product_url == "empty"
-                  product_url
-                else
+                if @product_url == "empty"
                   site_url
+                else
+                  @product_url
                 end
 
               elsif campaign_name != "landing"
