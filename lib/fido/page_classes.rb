@@ -144,7 +144,7 @@ class Site
 
   # Overview Site Statistics
   def overview_site_stats
-    table = self.div(:id=>"If_58").table(:id=>"sites").to_a
+    table = self.div(:id=>"If_60").table(:id=>"sites").to_a
     table.flatten!
   end
 
@@ -174,7 +174,7 @@ class Site
   end
 
   def campaigns_table
-    self.div(:id=>"If_71_0").table(:id=>"sites")
+    self.div(:id=>"If_73").table(:id=>"sites")
   end
 
   #Campaigns info
