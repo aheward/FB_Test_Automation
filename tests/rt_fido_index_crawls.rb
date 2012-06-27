@@ -45,7 +45,7 @@ nav("Networks")
   @browser.select(:id, "PropertySelection").select("Active")
 end
 
-logout
+@accounts_index.logout
 test("User:")
 
 @browser.close
