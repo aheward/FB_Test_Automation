@@ -6,59 +6,11 @@ module FunctionalTests
     test_sites.each do | test_info |
       next if tested_sites.include? test_info["siteId"] # Line to ensure skipping a site if it's already been tested
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-      # DEBUG INFO =========================================
-      puts
-      puts "Test Data:"
-      test_info.each { |k, v| puts "#{k} is #{v}"}
-      puts
-      # ===================================================
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
       conversion_types.each do |conv_type|
 
         visit CookieEditor do |pg|
           pg.set_control_cookie(test_info[:control_perc])
           $unique_id = @browser.unique_identifier
-
-
-          # DEBUG CODE ===========================
-
-          puts "Your UID:"
-          puts $unique_id
-
-          # =====================================
 
         end
 
@@ -174,31 +126,6 @@ module FunctionalTests
         end
 
         @browser.get_pixeled(test_info)
-
-
-
-
-
-      # DEBUG CODE ======================
-
-
-      puts "Your UID:"
-      puts $unique_id
-      outs "Your Local IP:"
-      puts $local_ip
-      puts "This should be the target pixel event:"
-      puts test_info[:target_pixel_event]
-
-      puts "This is the creative link being used:"
-      puts test_info[:creative_link]
-
-
-
-
-      # =====================================
-
-
-
 
         conversion_report_header(test_info)
         network_ad_tags_report(test_info)
