@@ -4,52 +4,46 @@ TEST_TYPE = :rt
 require '../config/fido_env'
 
 # Existing User
-nav("Users")
-@browser.link(:text, @fido.test_data['test_user']).click
+@user = @accounts_index.open_user(@fido.test_data['test_user'])
 
-1.upto(4) do | x |
-  original_value = @browser.text_field(:id, "TextField_#{x}").value
-  @browser.text_field(:id, "TextField_#{x}").value = random_ASCII_string(16, "") + random_non_ASCII_string(16, "")
+["first_name", "last_name", "email", "phone"].each_with_index do | field, index |
+  original_value = @user.send(field)
+
+  @user.send("#{field}_element").value = random_ASCII_string(16, "") + random_non_ASCII_string(16, "")
   submit
 
-  ascii_test("TextField_#{x}")
-  @browser.text_field(:id, "TextField_#{x}").value=original_value
+  ascii_test("TextField_#{index+1}")
+  @user.send("#{field}_element").value=original_value
   submit
 end
 
-@browser.text_field(:id, "TextField_4").value = "909-233-0909"
-
 # Name test
 # Shouldn't the Name field be read-only?
-if @browser.text_field(:id, "TextField_0").disabled? == true
-  puts ">>> Name is read-only"
-else
+if @user.username_element.enabled?
   puts ""
   puts "=============="
   puts "The Name field is not read-only!"
   puts "=============="
   puts ""
+else
+  puts ">>> Name is read-only"
 end
 
 # Password
 
-def logout
-  nav("Log Out")
-end
-
-username = @browser.text_field(:id, "TextField_0").value
+username = @user.username
 pword = random_non_ASCII_string(16, "")
 puts pword
 
-@browser.text_field(:id, "password").value = pword
+@user.password=pword
 submit
 
 test("Password not changed or set.")
 
-pword = random_ASCII_string(16, "")
+pword = random_ASCII_string(16, "â") # Note, this is seeded with the â to ensure that the string will contain at least one bad character.
 puts pword
 
-@browser.text_field(:id, "password").value = pword
+@user.password=pword
 submit
 
 test("Password not changed or set.")
@@ -57,11 +51,14 @@ test("Password not changed or set.")
 pword = random_string(16, "")
 puts pword
 
-@browser.text_field(:id, "password").value = pword
+@user.password=pword
 submit
-logout
+login_page = @user.logout
 accounts_index = login_page.log_in(username, pword)
-logout
-accounts_index = login_page.log_in(fido.user_name, fido.password)
 
-@browser.close
+if accounts_index.logo?
+  @browser.close
+else
+  puts "Please check that the user logged in with the new password. Something is broken."
+end
+

@@ -4,6 +4,10 @@ module HeaderBar
 
   include PageObject
 
+  def logo?
+    self.image(:src=>"images/logo.gif").present?
+  end
+
   def account_home # TODO - This is going to be wrong a lot
     self.link(:text=>"Account Home").click
     AccountsIndex.new @browser
@@ -23,7 +27,8 @@ module HeaderBar
   end
 
   def users
-    # TODO
+    self.link(:id=>/ExternalLink/, :text=>"Users").click
+    #UsersIndex.new @browser  TODO: Make this class
   end
 
   def data_partners
@@ -40,6 +45,12 @@ module HeaderBar
     self.link(:text=>"Networks").click
     NetworksIndex.new @browser
   end
+
+  def log_out
+    self.link(:text=>"Log Out").click
+    LoginPage.new @browser
+  end
+  alias logout log_out
 
 end
 
@@ -200,6 +211,13 @@ module NavigationalAids  # SOME OF These need to be deprecated over time...
     self.link(:text=>network_name).click
     self.button(:id=>"Submit_1").wait_until_present
     Network.new @browser
+  end
+
+  def open_user(user_name)
+    users
+    self.link(:text=>user_name[0].upcase).click
+    self.link(:text=>user_name).click
+    User.new @browser
   end
 
 end
