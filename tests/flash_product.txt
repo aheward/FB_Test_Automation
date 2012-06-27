@@ -1,0 +1,38 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+	<head>
+		<title>FetchBack | ${creativeType.width}x${creativeType.height}</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+		<style>
+			body { background: #d3d3d3; }
+		</style>
+		<script type="text/javascript" src="http://$swfObjectHost$swfObjectPath"></script>
+		<script type="text/javascript">
+			var flashvars = {};
+			flashvars.globalClick = "$esc.url("http://$clickHost$clickPath?xrx=$timestamp&crid=$creative.creativeId&bcrid=$creative.baseCreativeId&tid=$request.adTagId&said=$siteAction.id&clicktrack=$request.clicktrack")";
+			flashvars.policy = "http://$crossDomainPolicy";
+			flashvars.controlInteraction = escape("http://$engageHost$engagePath?crid=$creative.creativeId&tid=$request.adTagId&et=inter");
+			flashvars.logo = "${logo}_${creativeType.width}x${creativeType.height}.jpg";
+			flashvars.foreground = "${fg}_${creativeType.width}x${creativeType.height}.jpg";
+			flashvars.background = "${bg}_${creativeType.width}x${creativeType.height}.jpg";
+			flashvars.salesText = "$msg";
+#foreach( $product in $recoSiteProducts )
+#set ($count = $velocityCount - 1)
+flashvars.product$count = "$esc.url($unesc.html($product.name)) | $esc.url($unesc.html($product.description)) | $number.currency($product.price) | $esc.url($product.imageProxyUrl) | $esc.url("http://$clickHost$clickPath?xrx=$timestamp&crid=$creative.creativeId&bcrid=$creative.baseCreativeId&tid=$request.adTagId&said=$siteAction.id&spid=$product.siteProductId&clicktrack=$request.clicktrack")";
+#end
+	 		var params = {};
+			params.base = "http://$imageHost$assetPath/$creative.campaignId/$creative.baseCreativeId/";
+			params.wmode = "transparent";
+			params.allowscriptaccess = "always";
+			var attributes = {};
+			attributes.id = "banner";
+			fetchback.fn.swfobject.embedSWF("http://$imageHost$assetPath/$creative.campaignId/$creative.baseCreativeId/${prefix}_${creativeType.width}x${creativeType.height}.swf", "myAlternativeContent", "${creativeType.width}", "${creativeType.height}", "9.0.0", false, flashvars, params, attributes);
+		</script>
+
+	</head>
+	<body>
+          <div id="myAlternativeContent">
+              <table width="${creativeType.width}" height="${creativeType.height}" border="1" cellspacing="0" cellpadding="0" bordercolor="#666666" bgcolor="#dfdfdf"><tr><td align="center"><a href="http://get.adobe.com/flashplayer/" target="_blank">Can not display content.<br>Please download Flash Player.</td></tr></table>
+          </div>
+	</body>
+</html>

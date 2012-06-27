@@ -1,0 +1,15 @@
+<script type='text/javascript' language='javascript' src='$protocol://$swfObjectHost$swfObjectPath'></script>
+<script type='text/javascript' language='javascript'>
+var flashvars = {
+'clickTag':'$esc.url("http://$clickHost$clickPath?xrx=$timestamp&crid=$this.creativeId&bcrid=$this.baseCreativeId&tid=$request.adTagId&said=$siteAction.id&clicktrack=$request.clicktrack")'
+};
+var params = {
+'allowScriptAccess':'always',
+'wmode':'transparent',
+'quality':'high'
+};
+fetchback.fn.swfobject.embedSWF('$protocol://$imageDefault', 'FetchBack_flash', '$width','$height', '9.0.0', false, flashvars, params);
+</script>
+<div id='FetchBack_flash'>  <table width="${creativeType.width}" height="${creativeType.height}" border="1" cellspacing="0" cellpadding="0" bordercolor="#666666" bgcolor="#dfdfdf"><tr><td align="center"><a href="http://get.adobe.com/flashplayer/" target="_blank">Can not display content.<br>Please download Flash Player.</td></tr></table>
+</div>
+<!-- $this.campaignId -->

@@ -883,7 +883,7 @@ class Misc
 
   def project_version
     text = self.div(:class=>"box").p.text
-    text[/\d.\d.\d/]
+    text[/\d+\.\d+\.\d+/]
   end
 
 end

@@ -1,6 +1,6 @@
 # Update these items as needed to ensure the Fido crawling scripts continue to work properly...
 
-fido_version:      "2.7.5"
+fido_version:      "2.7.16"
 site_1:            "Avenue.com"                # Tests of Imp Counts. Site must be active
 site_2:            "Zagg"                      # More extensive tests of Site page. Site must be active and MUST have landing and dynamic campaigns.
 account_id:        "3111"                      # Must be the ID for the ACCOUNT associated with site 2.
@@ -18,3 +18,4 @@ flat_fee_site:     "Anjolee"                   # Should be an active site that i
 site_4_chr_test:   "Gazelle"                   # Any Active site that has active campaigns and is NOT 3rd-party billing.
 site_2_4_chr_test: "Penn Foster"               # Any Active site that has active campaigns and is NOT 3rd-party billing.
 test_user:         "abranton2"                 # Login ID of any active user.
+
