@@ -6,9 +6,9 @@
 
 # Obviously the names must match EXACTLY...
 
-conversion_type = "dtc" # Must be lower-case, in quotes, and match dtc, vtc, or ctc
-test_site_name  = "Kansas City Steaks"
-campaign_name   = "landing"
+conversion_type = "ctc" # Must be lower-case, in quotes, and match dtc, vtc, or ctc
+test_site_name  = "PaperStyle"
+campaign_name   = "dynamic form-fill"
 
 # If you need to test a special pixel page, define it here.
 # This URL will be used instead of the default URL.

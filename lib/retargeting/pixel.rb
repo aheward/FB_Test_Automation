@@ -80,6 +80,16 @@ module Pixel
     site_id =  hash["siteId"]
     hash[:pixel_cutoff] = calc_offset_time(FBConfig.get :pixel_event)
 
+    # DEBUG CODE ================================
+
+    #puts "original pixel link: " + pixel_link
+    #puts "Campaign name: " + campaign_name
+    #print "Site ID: "
+    #puts site_id
+    #puts "Pixel cutoff time: " + hash[:pixel_cutoff]
+
+    # ===========================================
+
     self.goto(pixel_link)
     sleep 3 if hash[:affiliate] == 0 # Wait extra time for redirect when using affiliate link.
     sleep 2 # Have to wait until pixel should have fired
@@ -87,7 +97,7 @@ module Pixel
     begin
       sit_cookie = self.sit[:value]
     rescue NoMethodError
-      puts "NOTE that I went to the target site pixel link but no SIT cookie was created!"
+      puts "---NOTE that I went to the target site pixel link but no SIT cookie was created!"
       sit_cookie = "bunk"
     end
     unless sit_cookie =~ /_#{hash['siteId']}:/
@@ -117,6 +127,12 @@ module Pixel
     end
     hash.store(:actual_pixel_url, pixel_link)
 
+    # DEBUG CODE ====================================
+
+    #puts "Actual pixel link used: " + hash[:actual_pixel_url]
+
+    # ===============================================
+
     # Get contents of pixel log...
     get_pixel_log(hash)
   end
@@ -136,6 +152,15 @@ module Pixel
     sleep(2)
     hash.store(:success_pixel_log, get_log($pixel_log))
     hash.store(:success_data, {:link=>success_link, :crv=>crv, :oid=>oid})
+
+    # DEBUG CODE ==============================
+
+    #puts "Success cutoff: " + hash[:success_cutoff]
+    #puts "Success pixel log: "
+    #puts hash[:success_pixel_log]
+
+    # =========================================
+
   end
 
   def get_loyalty_success(hash)
@@ -163,11 +188,29 @@ module Pixel
       aff_link = pepperjam_url_2 + CGI::escape(CGI::escape(url))
     end
 
-    aff = rand(2)
+    if campaign_name == "landing" || campaign_name == "dynamic"
+      aff = rand(2)
+    else
+      aff = 1
+    end
 
-    if aff == 0 && ( campaign_name == "landing" || campaign_name == "dynamic" )
+    if aff == 0
+
+      # DEBUG CODE ====================================
+
+      #puts "Selecting to use the affiliate link"
+
+      # ===============================================
+
       pixel_link = aff_link
     else
+
+      # DEBUG CODE ====================================
+
+      #puts "Not using the affiliate link"
+
+      # ===============================================
+
       pixel_link = url
     end
     hash.store(:url, pixel_link)

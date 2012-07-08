@@ -45,7 +45,7 @@ module Logs
 
     items_i_did = [] # defining the list of all log items you're responsible for
 
-    if log !~ /\s#{$local_ip}\s/
+    if log !~ /#{$local_ip}/
       puts FBErrorMessages::Logs.no_events_with_ip($local_ip)
     end
 
@@ -90,7 +90,7 @@ module Logs
 
     begin
       log_entries = open(log).read
-    rescue SocketError
+    rescue
       puts FBErrorMessages::Logs.unable_to_open_log_file(log)
       exit
     end
@@ -98,16 +98,26 @@ module Logs
     if $test_site =~ /#{CLUSTER}/
       begin
         log_entries1 = open(log1).read #URI.parse(log1).read
-      rescue SocketError
+      rescue
         puts FBErrorMessages::Logs.unable_to_open_log_file(log1)
         exit
       end
       log_entries << log_entries1
     end
+
+    # DEBUG CODE ====================================
+
+    #puts "\nlog file:\n" + log_entries
+
+    # ===============================================
+
+
+    log_entries
   end
 
   def get_pixel_log(hash)
     hash.store(:raw_pixel_log, get_log($pixel_log))
+
     if hash[:control_id] == nil
       campaign_name = hash['campaign_name']
     else
@@ -116,11 +126,34 @@ module Logs
     hash[:close_pixel_events] = filtrate(hash[:raw_pixel_log], hash[:pixel_cutoff])
     hash[:target_pixel_event] = hash[:close_pixel_events].find { | line | line =~ /#{campaign_name}/i }
 
+    landing = hash[:close_pixel_events].find { | line | line =~ /landing/ }
+
+    if hash[:target_pixel_event].class == NilClass && campaign_name == "dynamic"
+
+      hash[:target_pixel_event] = landing
+      puts "\n---PLEASE NOTE: The dynamic campaign pixel did not fire, but the landing pixel did.\n\tTest results will be wonky.\n"
+
+    end
+
     begin
       hash[:split_pixel_log] = split_log(hash[:target_pixel_event].chomp, "pixel")
     rescue NoMethodError
       hash.store(:error, FBErrorMessages::Pixels.no_pixel_fired)
     end
+
+
+    # DEBUG CODE ====================================
+
+    #puts "\nraw pixel log (stored in hash): \n" + hash[:raw_pixel_log]
+    #puts "\nclose pixel events:"
+    #puts hash[:close_pixel_events]
+    #puts "\nWhat is thought to be the target event:"
+    #puts hash[:target_pixel_event]
+    #puts "\nThe hash containing the target pixel event:"
+    #puts hash[:split_pixel_log].inspect
+
+    # ===============================================
+
 
   end
 
@@ -136,6 +169,20 @@ module Logs
     rescue NoMethodError
       hash.store(:error, FBErrorMessages::Imps.no_imp_event)
     end
+
+
+    # DEBUG CODE ====================================
+
+    #puts "\nraw imp log (stored in hash): \n" + hash[:raw_imp_log]
+    #puts "\nclose imp events:"
+    #puts hash[:imp_array]
+    #puts "\nWhat is thought to be the target event: \n" + imp_line
+    #puts "\nThe hash containing the target imp event:"
+    #puts hash[:split_imp_log].inspect
+
+    # ===============================================
+
+
   end
 
   def get_loyalty_imp_log(hash)
@@ -147,6 +194,19 @@ module Logs
     rescue NoMethodError
       hash.store(:error, FBErrorMessages::Imps.no_imp_event)
     end
+
+
+    # DEBUG CODE ====================================
+
+    #puts "\nraw loyalty imp log (stored in hash): \n" + hash[:raw_loyalty_imp_log]
+    #puts "\nclose loyalty imp events: \n" + hash[:loyalty_imp_array]
+    #puts "\nWhat is thought to be the target event: \n" + imp_line
+    #puts "\nThe hash containing the target loyalty event:"
+    #puts hash[:split_loyalty_imp_log].inspect
+
+    # ===============================================
+
+
   end
 
   def get_conversion_plus(hash)
@@ -159,11 +219,35 @@ module Logs
     if hash['campaign_name'] =~ /dynamic/i
       hash[:product_log] = get_product_log(hash)
     end
+
+
+    # DEBUG CODE ====================================
+
+    #puts "\nraw conversion log (stored in hash): \n" + hash[:conversion_log]
+    #puts "\nraw affiliate conversion log (stored in hash):"
+    #puts hash[:afl_conv_log]
+    #puts "\nproduct log (stored in hash): \n"
+    #puts hash[:product_log]
+
+    # ===============================================
+
+
   end
   
   def get_product_log(hash)
 
     product_log = get_log($product_log)
+
+
+
+    # DEBUG CODE ====================================
+
+    #puts "\nraw product log: \n"
+    #puts product_log
+
+    # ===============================================
+
+
 
     array = []
     product_log.each_line do | line |
@@ -695,7 +779,13 @@ module Logs
 
     click_link = "http://imp.fetchback.com/serve/fb/click?#{xrx}&#{crid}&#{tid}&clicktrack=http://fido.fetchback.com/clicktrack.php%3F%2C"
 
-    #puts click_link
+    # DEBUG CODE =================================
+
+    #puts "\nThe link to simulate the click:"
+    #puts click_link + "\n"
+
+    # ============================================
+
   end
 
   # Method to parse the link
