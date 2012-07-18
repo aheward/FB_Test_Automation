@@ -32,12 +32,12 @@ end
 # Password
 
 username = @user.username
-pword = random_non_ASCII_string(16, "")
+pword = random_non_ASCII_string(16, "a1@")
 puts pword
 
 @user.password=pword
 submit
-
+sleep 20
 test("Password not changed or set.")
 
 pword = random_ASCII_string(16, "â") # Note, this is seeded with the â to ensure that the string will contain at least one bad character.
@@ -48,7 +48,7 @@ submit
 
 test("Password not changed or set.")
 
-pword = random_string(16, "")
+pword = random_string(17, "a1@")
 puts pword
 
 @user.password=pword

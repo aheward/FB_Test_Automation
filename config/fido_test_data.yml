@@ -17,5 +17,5 @@ uat_site_name:     "Atlantis"                  # Must be the name of an Active s
 flat_fee_site:     "Anjolee"                   # Should be an active site that is flat fee (doesn't HAVE to be)
 site_4_chr_test:   "Gazelle"                   # Any Active site that has active campaigns and is NOT 3rd-party billing.
 site_2_4_chr_test: "Penn Foster"               # Any Active site that has active campaigns and is NOT 3rd-party billing.
-test_user:         "abranton2"                 # Login ID of any active user.
+test_user:         "doug"                 # Login ID of any active user.
 
