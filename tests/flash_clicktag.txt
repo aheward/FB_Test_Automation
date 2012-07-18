@@ -1,7 +1,7 @@
 <script type='text/javascript' language='javascript' src='$protocol://$swfObjectHost$swfObjectPath'></script>
 <script type='text/javascript' language='javascript'>
 var flashvars = {
-'clickTag':'$esc.url("http://$clickHost$clickPath?xrx=$timestamp&crid=$this.creativeId&bcrid=$this.baseCreativeId&tid=$request.adTagId&said=$siteAction.id&clicktrack=$request.clicktrack")'
+'clickTag':'$esc.url("http://$clickHost$clickPath?xrx=$timestamp&crid=$this.creativeId&dynid=$this.dynamicInstanceId&tid=$request.adTagId&said=$siteAction.id&clicktrack=$request.clicktrack")'
 };
 var params = {
 'allowScriptAccess':'always',
