@@ -23,3 +23,7 @@ include FetchBackConstants
 include Randomizers
 include PageNavigation
 
+# The Debug level
+# Goes from 0 to 3, with each level
+# showing progressively more debugging information.
+DEBUG = 0

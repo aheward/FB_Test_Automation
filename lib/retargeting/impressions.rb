@@ -22,10 +22,10 @@ module Impressions
       hash[:imp_cutoff] = calc_offset_time(FBConfig.get :imp_event)
 
       #DEBUG CODE ================================
-
-      #puts "Imp cutoff time: " + hash[:imp_cutoff]
-      #puts "Imp link: " + hash[:creative_link]
-
+      if DEBUG > 0
+        puts "Imp cutoff time: " + hash[:imp_cutoff]
+        puts "Imp link: " + hash[:creative_link]
+      end
       # ==========================================
 
       self.goto(hash[:creative_link])

@@ -8,11 +8,11 @@ module FunctionalTests
 
 
       # DEBUG INFO =========================================
-
-      #puts "\nTest Data:\n"
-      #test_info.each { |k, v| puts "#{k} is #{v}"}
-      #puts
-
+      if DEBUG > 0
+        puts "\nTest Data:\n"
+        test_info.each { |k, v| puts "#{k} is #{v}"}
+        puts
+      end
       # ===================================================
 
 
@@ -27,13 +27,12 @@ module FunctionalTests
 
         # DEBUG CODE ===========================
 
-        #puts "Your UID:"
-        #puts $unique_id
+          puts "Your UID: " + $unique_id if DEBUG > 2
 
         # =====================================
 
 
-        @browser.dirty(test_info['siteId'], rand(3), 2)
+        @browser.dirty(test_info['siteId'], rand(3), 2) unless DEBUG > 0
 
         @browser.get_pixeled(test_info)
 
@@ -59,7 +58,7 @@ module FunctionalTests
           end
         end
 
-        @browser.dirty(test_info['siteId'], rand(3), 2)
+        @browser.dirty(test_info['siteId'], rand(3), 2) unless DEBUG > 0
 
         # Success
         @browser.get_success(test_info)
@@ -70,7 +69,7 @@ module FunctionalTests
         # Tests for Loyalty campaigns...
         if test_info[:loyalty_id] !=nil
           @browser.get_loyalty_impified(test_info)
-          #@browser.dirty(test_info['siteId'], rand(3), 2)
+          @browser.dirty(test_info['siteId'], rand(3), 2) unless DEBUG > 0
           @browser.get_loyalty_success(test_info)
           get_loyalty_logs(test_info)
 

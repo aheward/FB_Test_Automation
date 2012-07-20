@@ -81,13 +81,13 @@ module Pixel
     hash[:pixel_cutoff] = calc_offset_time(FBConfig.get :pixel_event)
 
     # DEBUG CODE ================================
-
-    #puts "original pixel link: " + pixel_link
-    #puts "Campaign name: " + campaign_name
-    #print "Site ID: "
-    #puts site_id
-    #puts "Pixel cutoff time: " + hash[:pixel_cutoff]
-
+    if DEBUG > 0
+      puts "original pixel link: " + pixel_link
+      puts "Campaign name: " + campaign_name
+      print "Site ID: "
+      puts site_id
+      puts "Pixel cutoff time: " + hash[:pixel_cutoff]
+    end
     # ===========================================
 
     self.goto(pixel_link)
@@ -129,7 +129,7 @@ module Pixel
 
     # DEBUG CODE ====================================
 
-    #puts "Actual pixel link used: " + hash[:actual_pixel_url]
+    puts "Actual pixel link used: " + hash[:actual_pixel_url] if DEBUG > 1
 
     # ===============================================
 
@@ -154,11 +154,11 @@ module Pixel
     hash.store(:success_data, {:link=>success_link, :crv=>crv, :oid=>oid})
 
     # DEBUG CODE ==============================
-
-    #puts "Success cutoff: " + hash[:success_cutoff]
-    #puts "Success pixel log: "
-    #puts hash[:success_pixel_log]
-
+    if DEBUG > 1
+      puts "Success cutoff: " + hash[:success_cutoff]
+      puts "Success pixel log: "
+      puts hash[:success_pixel_log]
+    end
     # =========================================
 
   end
@@ -198,7 +198,7 @@ module Pixel
 
       # DEBUG CODE ====================================
 
-      #puts "Selecting to use the affiliate link"
+      puts "Selecting to use the affiliate link" if DEBUG > 2
 
       # ===============================================
 
@@ -207,7 +207,7 @@ module Pixel
 
       # DEBUG CODE ====================================
 
-      #puts "Not using the affiliate link"
+      puts "Not using the affiliate link" if DEBUG > 2
 
       # ===============================================
 

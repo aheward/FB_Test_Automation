@@ -144,14 +144,15 @@ module Logs
 
     # DEBUG CODE ====================================
 
-    #puts "\nraw pixel log (stored in hash): \n" + hash[:raw_pixel_log]
-    #puts "\nclose pixel events:"
-    #puts hash[:close_pixel_events]
-    #puts "\nWhat is thought to be the target event:"
-    #puts hash[:target_pixel_event]
-    #puts "\nThe hash containing the target pixel event:"
-    #puts hash[:split_pixel_log].inspect
-
+    puts "\nraw pixel log (stored in hash): \n" + hash[:raw_pixel_log] if DEBUG > 2
+    if DEBUG > 1
+      puts "\nclose pixel events:"
+      puts hash[:close_pixel_events]
+      puts "\nWhat is thought to be the target event:"
+      puts hash[:target_pixel_event]
+      puts "\nThe hash containing the target pixel event:"
+      puts hash[:split_pixel_log].inspect
+    end
     # ===============================================
 
 
@@ -173,13 +174,14 @@ module Logs
 
     # DEBUG CODE ====================================
 
-    #puts "\nraw imp log (stored in hash): \n" + hash[:raw_imp_log]
-    #puts "\nclose imp events:"
-    #puts hash[:imp_array]
-    #puts "\nWhat is thought to be the target event: \n" + imp_line
-    #puts "\nThe hash containing the target imp event:"
-    #puts hash[:split_imp_log].inspect
-
+    puts "\nraw imp log (stored in hash): \n" + hash[:raw_imp_log] if DEBUG > 2
+    if DEBUG > 1
+      puts "\nclose imp events:"
+      puts hash[:imp_array]
+      puts "\nWhat is thought to be the target event: \n" + imp_line
+      puts "\nThe hash containing the target imp event:"
+      puts hash[:split_imp_log].inspect
+    end
     # ===============================================
 
 
@@ -198,12 +200,13 @@ module Logs
 
     # DEBUG CODE ====================================
 
-    #puts "\nraw loyalty imp log (stored in hash): \n" + hash[:raw_loyalty_imp_log]
-    #puts "\nclose loyalty imp events: \n" + hash[:loyalty_imp_array]
-    #puts "\nWhat is thought to be the target event: \n" + imp_line
-    #puts "\nThe hash containing the target loyalty event:"
-    #puts hash[:split_loyalty_imp_log].inspect
-
+    puts "\nraw loyalty imp log (stored in hash): \n" + hash[:raw_loyalty_imp_log] if DEBUG > 2
+    if DEBUG > 1
+      puts "\nclose loyalty imp events: \n" + hash[:loyalty_imp_array]
+      puts "\nWhat is thought to be the target event: \n" + imp_line
+      puts "\nThe hash containing the target loyalty event:"
+      puts hash[:split_loyalty_imp_log].inspect
+    end
     # ===============================================
 
 
@@ -223,12 +226,13 @@ module Logs
 
     # DEBUG CODE ====================================
 
-    #puts "\nraw conversion log (stored in hash): \n" + hash[:conversion_log]
-    #puts "\nraw affiliate conversion log (stored in hash):"
-    #puts hash[:afl_conv_log]
-    #puts "\nproduct log (stored in hash): \n"
-    #puts hash[:product_log]
-
+    puts "\nraw conversion log (stored in hash): \n" + hash[:conversion_log] if DEBUG > 2
+    if DEBUG > 1
+      puts "\nraw affiliate conversion log (stored in hash):"
+      puts hash[:afl_conv_log]
+      puts "\nproduct log (stored in hash): \n"
+      puts hash[:product_log]
+    end
     # ===============================================
 
 
@@ -241,10 +245,10 @@ module Logs
 
 
     # DEBUG CODE ====================================
-
-    #puts "\nraw product log: \n"
-    #puts product_log
-
+    if DEBUG > 1
+      puts "\nraw product log: \n"
+      puts product_log
+    end
     # ===============================================
 
 
@@ -314,7 +318,7 @@ module Logs
     puts "Creative ID: #{conversion_hash[:creative_id]}" if conversion_hash[:creative_id].to_i != 0
     puts "Credited campaign: #{conversion_hash[:campaign_name]}"
     puts "---Wrong site ID in conversion log!" if conversion_hash[:site_id].to_i != site_id.to_i
-    # This "unless" clause is because I want to do specific conversion checks when DTC...
+    # This "unless" clause is because I want to do specific conversion checks when DTC (see the 'case' code below)...
     # ...or if we're doing a test of Loyalty. Need to be vigilant about the conversion type in that case.
     unless conversion_hash[:conversion_type] == "dtc" || conversion_hash[:campaign_name] == "loyalty.campaign"
       puts "---Unexpected Conversion Type!" if conversion_type != conversion_hash[:conversion_type]
@@ -780,10 +784,10 @@ module Logs
     click_link = "http://imp.fetchback.com/serve/fb/click?#{xrx}&#{crid}&#{tid}&clicktrack=http://fido.fetchback.com/clicktrack.php%3F%2C"
 
     # DEBUG CODE =================================
-
-    #puts "\nThe link to simulate the click:"
-    #puts click_link + "\n"
-
+    if DEBUG > 1
+      puts "\nThe link to simulate the click:"
+      puts click_link + "\n"
+    end
     # ============================================
 
   end
