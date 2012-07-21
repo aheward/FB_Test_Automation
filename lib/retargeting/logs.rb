@@ -332,9 +332,9 @@ module Logs
     case
       when conversion_hash[:conversion_type] == "dtc"
 
-        if conversion_hash[:site_imp_count].to_i > 0 && conversion_hash[:latest_imp_time] == "" && merit30 != -1
+        if conversion_hash[:site_imp_count].to_i > 0 && conversion_hash[:latest_imp_time] == "" && test_info_hash[:merit30] != -1
           puts "Looks like the imp was served outside the Site's conversion window."
-        elsif conversion_hash[:site_imp_count].to_i > 0 && merit30 == -1
+        elsif conversion_hash[:site_imp_count].to_i > 0 && test_info_hash[:merit30] == -1
           puts "---Imp count is not zero, so something is wacky."
           puts "\tCheck the Site's conversion window against the latest imp time."
         else
