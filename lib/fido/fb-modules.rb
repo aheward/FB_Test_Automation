@@ -32,7 +32,9 @@ module HeaderBar
   end
 
   def data_partners
-    # TODO
+    self.link(:href=>/page=DataPartners/).click
+    self.link(:text=>"Add Data Partner").wait_until_present
+    DataPartnersIndex.new @browser
   end
 
   def misc_tab
@@ -88,25 +90,39 @@ module LeftMenuBar
   end
 
   #third_party_tag_index
-  #data_partner_index
-  #data_partner_settings
+
+  def data_partner_index
+    self.link(:text=>"Data Partner Index").click
+    self.table(:id=>"dataPartners").wait_until_present
+    DataPartnersIndex.new @browser
+  end
+
+  def data_partner_settings
+    self.link(:text=>"Data Partner Settings").click
+    self.table(:id=>"dataPartnerGlobal_overview").wait_until_present
+    DataPartnerSettings.new @browser
+  end
   #help_faq
   #email_us
   #terms_and_conditions
   #privacy_policy
   #edit_profile
   #vtc_manager
+
   def io_accountability
     self.link(:text=>"I/O Accountability").click
     IOAccountability.new @browser
   end
+
   #transaction_history
   #audit
+
   def keyword_matching
     self.link(:text=>"Keyword Matching").click
     self.button(:class=>"controlButton submitKeywords").wait_until_present
     KeywordMatching.new @browser
   end
+
   #manage_user_profile
   #transactions
   #overview
@@ -115,6 +131,7 @@ module LeftMenuBar
     self.link(:text=>"Campaign Home").click
     Campaign.new @browser
   end
+
   #campaign_dqs
   #campaign_pricing
   #dynamic_manager
@@ -133,7 +150,13 @@ module LeftMenuBar
   #add_site
   #add_network_tag
   #add_network
-  #add_data_partner
+
+  def add_data_partner
+    self.link(:text=>"Add Data Partner").click
+    self.table(:id=>"dataPartner_overview").wait_until_present
+    DataPartner.new @browser
+  end
+
   #add_third_party_tag
   #all_users
   #administrators
@@ -237,6 +260,7 @@ module CrawlerMethods # TODO improve/deprecate some or all of this!
       @browser.button(:id, "Submit_0").click
     end
   end
+
   def test(text)
     puts "~~PAGE~~ #{@browser.title}"
     if @browser.text.include?(text)
@@ -247,6 +271,45 @@ module CrawlerMethods # TODO improve/deprecate some or all of this!
       puts "Test of '#{text}' failed!"
       puts "=============="
       puts ""
+    end
+  end
+
+  def element_test(element, text)
+    puts "~~PAGE~~ #{@browser.title}"
+    if element =~ /#{Regexp.escape(text)}/
+      puts ">>> Test of '#{text}' passed."
+    else
+      puts ""
+      puts "=============="
+      puts "Test of '#{text}' failed!"
+      puts "=============="
+      puts ""
+    end
+  end
+
+  def list_include(list, item)
+    puts "~~PAGE~~ #{@browser.title}"
+    if list.include? item
+      puts ">>> Test of '#{item}' passed."
+    else
+      puts ""
+      puts "=============="
+      puts "Test of '#{item}' failed!"
+      puts "=============="
+      puts ""
+    end
+  end
+
+  def list_exclude(list, item)
+    puts "~~PAGE~~ #{@browser.title}"
+    if list.include? item
+      puts ""
+      puts "=============="
+      puts "Test of '#{item}' failed!"
+      puts "=============="
+      puts ""
+    else
+      puts ">>> Test of '#{item}' passed."
     end
   end
 

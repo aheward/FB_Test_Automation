@@ -906,14 +906,48 @@ class DataPartnersIndex
   include HeaderBar
   include LeftMenuBar
 
+  def open_data_partner name
+    self.link(:text=>name).click
+    self.table(:id=>"dataPartner_overview").wait_until_present
+    DataPartner.new @browser
+  end
+
+  table(:data_partners, :id=>"dataPartners")
+
+  def data_partner_names
+    list = []
+    self.table(:id=>"dataPartners").rows(:id=>/For_/).each do |row|
+      list << row.td(:index=>1).text
+    end
+    list
+  end
+
 end
 
-class DataPartners
+class DataPartner
 
   include PageObject
   include NavigationalAids
   include HeaderBar
   include LeftMenuBar
+
+  select_list(:data_partner_type, :id=>"PropertySelection")
+  text_field(:data_partner_name, :id=>"TextField_0")
+  text_field(:due_to_fetchback, :id=>"TextField_1")
+  checkbox(:anonymous_source, :id=>"isAnon")
+  text_field(:data_source_name, :id=>"dataSourceName")
+  text_field(:minimum_cpm, :id=>"minCPM")
+  select_list(:status, :id=>"PropertySelection_0")
+  div(:non_secure_pixel, :id=>"pdNonSecure")
+  div(:secure_pixel, :id=>"pdSecure")
+  h2(:info, :id=>"info")
+
+  def create
+    self.button(:id=>"Submit").click
+    self.h2(:id=>"info").wait_until_present
+    DataPartner.new @browser
+  end
+  alias update create
 
 end
 
@@ -923,6 +957,8 @@ class DataPartnerSettings
   include NavigationalAids
   include HeaderBar
   include LeftMenuBar
+
+
 
 end
 
