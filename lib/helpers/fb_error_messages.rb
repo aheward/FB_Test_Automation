@@ -47,7 +47,7 @@ module FBErrorMessages
 
     end
 
-    def self.no_pixel_fired
+    def self.no_pixel_fired(link)
       %|Hmmm... 
       \tIf this was a test of a keyword campaign
       \tthen you're seeing this message because
@@ -56,6 +56,8 @@ module FBErrorMessages
       \tfor the landing campaign).
       \tIt's probably because the keyword link is
       \tbeing faked.
+
+      \tHere's the link tried: #{link}
 
       \tThe most common cause is that the site
       \tis doing an auto-redirect (since the URL

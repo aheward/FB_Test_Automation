@@ -138,7 +138,7 @@ module Logs
     begin
       hash[:split_pixel_log] = split_log(hash[:target_pixel_event].chomp, "pixel")
     rescue NoMethodError
-      hash.store(:error, FBErrorMessages::Pixels.no_pixel_fired)
+      hash.store(:error, FBErrorMessages::Pixels.no_pixel_fired(hash[:url]))
     end
 
 
