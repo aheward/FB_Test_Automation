@@ -768,30 +768,6 @@ module Logs
     end
   end
 
-  # This creates the link that simulates the global clicking of an ad.
-  # It would be good at some point to extend this method's capabilities, such that it creates a product-specific click link
-  # when testing dynamic campaigns.
-  def clicktrack(link="http://www.fetchback.com")
-
-    xrx = self.html[/xrx=\d+/]
-    crid = self.html[/crid=\d+/]
-    tid = self.html[/tid=\d+/]
-
-    # Placeholder code in case we need to use it...
-    #escaped_link = CGI::escape(link)
-    # click_link = "http://imp.fetchback.com/serve/fb/click?#{xrx}&#{crid}&#{tid}&clicktrack=http://fido.fetchback.com/clicktrack.php%3F%2C&rx=#{escaped_link}"
-
-    click_link = "http://imp.fetchback.com/serve/fb/click?#{xrx}&#{crid}&#{tid}&clicktrack=http://fido.fetchback.com/clicktrack.php%3F%2C"
-
-    # DEBUG CODE =================================
-    if DEBUG > 1
-      puts "\nThe link to simulate the click:"
-      puts click_link + "\n"
-    end
-    # ============================================
-
-  end
-
   # Method to parse the link
   # This method is mostly obsolete, but is still used in fido-classes.rb
   # for grabbing the pixel links sub-strings.

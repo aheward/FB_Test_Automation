@@ -32,7 +32,16 @@ module Impressions
       sleep $imp_seconds
 
       if hash[:conv_type] =~ /ctc/i
+
         hash[:click_link] = self.clicktrack(hash[:url])
+
+        # DEBUG CODE =================================
+        if DEBUG > 1
+          puts "\nThe link to simulate the click:"
+          puts hash[:click_link] + "\n"
+        end
+        # ============================================
+
         self.goto(hash[:click_link])
 
       end
@@ -64,6 +73,24 @@ module Impressions
     elsif self["campaign"] == "dynamic" && self["showPopularBrowsed"] == 1
       self["imp_code"] = 1
     end
+  end
+
+
+  # This creates the link that simulates the global clicking of an ad.
+  # It would be good at some point to extend this method's capabilities, such that it creates a product-specific click link
+  # when testing dynamic campaigns.
+  def clicktrack(link="http://www.fetchback.com")
+
+    xrx = self.html[/xrx(=|%3D)\d+/].gsub!("%3D","=")
+    crid = self.html[/crid=\d+/]
+    tid = self.html[/tid=\d+/]
+
+    # Placeholder code in case we need to use it...
+    #escaped_link = CGI::escape(link)
+    # click_link = "http://imp.fetchback.com/serve/fb/click?#{xrx}&#{crid}&#{tid}&clicktrack=http://fido.fetchback.com/clicktrack.php%3F%2C&rx=#{escaped_link}"
+
+    click_link = "http://imp.fetchback.com/serve/fb/click?#{xrx}&#{crid}&#{tid}&clicktrack=http://fido.fetchback.com/clicktrack.php%3F%2C"
+
   end
 
 end
