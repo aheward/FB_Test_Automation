@@ -107,10 +107,9 @@ module Logs
 
     # DEBUG CODE ====================================
 
-    #puts "\nlog file:\n" + log_entries
+    puts "\nlog file:\n" + log_entries if DEBUG > 2
 
     # ===============================================
-
 
     log_entries
   end
@@ -178,7 +177,7 @@ module Logs
     if DEBUG > 1
       puts "\nclose imp events:"
       puts hash[:imp_array]
-      puts "\nWhat is thought to be the target event: \n" + imp_line
+      puts "\nWhat is thought to be the target event: \n" + imp_line.to_s
       puts "\nThe hash containing the target imp event:"
       puts hash[:split_imp_log].inspect
     end
@@ -788,16 +787,6 @@ module Logs
     #end
 
     string
-  end
-
-  # this method makes an impression link based on the passed ad tag id.
-  def tagify(ad_tag_id)
-    if TEST_TYPE == :rt
-      link = "http://imp.fetchback.com"
-    else
-      link = "http://#{$test_site_ip}"
-    end
-    link + "/serve/fb/imp?tid=#{ad_tag_id}"
   end
 
   def calc_offset_time(local_adjustment)

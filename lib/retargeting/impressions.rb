@@ -75,6 +75,10 @@ module Impressions
     end
   end
 
+  # this method makes an impression link based on the passed ad tag id.
+  def tagify(ad_tag_id)
+    IMP_SERVER + "imp?tid=#{ad_tag_id}"
+  end
 
   # This creates the link that simulates the global clicking of an ad.
   # It would be good at some point to extend this method's capabilities, such that it creates a product-specific click link
@@ -89,7 +93,7 @@ module Impressions
     #escaped_link = CGI::escape(link)
     # click_link = "http://imp.fetchback.com/serve/fb/click?#{xrx}&#{crid}&#{tid}&clicktrack=http://fido.fetchback.com/clicktrack.php%3F%2C&rx=#{escaped_link}"
 
-    click_link = "http://imp.fetchback.com/serve/fb/click?#{xrx}&#{crid}&#{tid}&clicktrack=http://fido.fetchback.com/clicktrack.php%3F%2C"
+    click_link = IMP_SERVER + "click?#{xrx}&#{crid}&#{tid}&clicktrack=" + CLICKTRACK
 
   end
 

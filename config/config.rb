@@ -115,6 +115,35 @@ class FBConfig
     $extra_imp_count = @@config['extra_imps']
     $browser = @@config['browser']
 
+    if DEBUG > 1
+      puts "$test_site: " + $test_site
+      puts "$test_site_ip: " + $test_site_ip
+      puts "$pixel_log: " + $pixel_log
+      puts "$imp_log: " + $imp_log
+      puts "$impvar_log: " + $impvar_log
+      puts "$conversion_log: " + $conversion_log
+      puts "$affiliate_log: " + $affiliate_log
+      puts "$product_log: " + $product_log
+      puts "$proxy_log: " + $proxy_log
+      puts "\nThese log URLs only need to be right if you're testing qa-fido..."
+      puts "$pixel_log1: " + $pixel_log1
+      puts "$imp_log1: " + $imp_log1
+      puts "$impvar_log1: " + $impvar_log1
+      puts "$conversion_log1: " + $conversion_log1
+      puts "$affiliate_log1: " + $affiliate_log1
+      puts "$product_log1: " + $product_log1
+      puts "$proxy_log1: " + $proxy_log1
+      puts "\n$local_ip: " + $local_ip
+      puts "$fido_username: " + $fido_username
+      puts "$fido_password: " + $fido_password
+      puts "$confluence_username: " + $confluence_username
+      puts "$confluence_password: " + $confluence_password
+      puts "$offset: " + $offset.to_s
+      puts "$imp_seconds: " + $imp_seconds.to_s
+      puts "$extra_imp_count: " + $extra_imp_count.to_s
+      puts "$browser: " + $browser.to_s
+    end
+
   end # initialize
 
   def self.get parent, child=nil

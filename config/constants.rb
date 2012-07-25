@@ -18,8 +18,14 @@ module FetchBackConstants
   # Direct/Organic conversion offsets
   CONVERSION_OFFSETS = [ 7150, 7200 ]
 
+  # Prefix for imp links...
+  IMP_SERVER = "http://imp.fetchback.com/serve/fb/"
+
   # Prefix for pixel links...
   PIXEL_SERVER = "http://pixel.fetchback.com/serve/fb/"
+
+  # The link text that goes after 'clicktrack=' in a click link...
+  CLICKTRACK = "http://fido.fetchback.com/clicktrack.php%3F%2C"
 
   # An empty page on the fetchback domain. This
   # is necessary so that the scripts can easily
