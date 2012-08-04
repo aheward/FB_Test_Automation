@@ -35,7 +35,7 @@ module DataMakers
     test_sites = get_generic_test_sites(count)
     test_sites.each do |site_hash|
       campaigns = non_zero_campaign_data(site_hash['siteId'])
-      campaigns.delete_if { |item| item["campaign_name"] =~ /abandon/i }
+      campaigns.delete_if { |item| item["campaign_name"] =~ /(abadon|opt.*out)/i }
       campaigns.keep_if { |item| item["campaign_name"] != "dynamic" && item["campaign_name"] != "Dynamic" && item["campaign_name"] != "landing" && item["campaign_name"] != "control" && item["campaign_name"] != "loyalty.campaign" }
       add_camp_to_site(site_hash, campaigns)
       add_control_perc(site_hash)
@@ -208,7 +208,11 @@ module DataMakers
   def clean_up(sites_hashes, count)
     sites_hashes.delete_if { | site | site[:account_id] == 0 }
     sites_hashes.shuffle!
-    sites_hashes[0..count-1]
+    test_sites = sites_hashes[0..count-1]
+    if DEBUG > 2
+      test_sites.each { |site| puts site.inspect }
+    end
+    test_sites
   end
 
 end

@@ -105,7 +105,11 @@ class FBConfig
     # it needs to be.
     raise error(@text) unless @text =~ /#{$test_site_ip}.*clk.fetchback.com/
 
-    $local_ip = open("http://myip.dk") { |f| /([0-9]{1,3}\.){3}[0-9]{1,3}/.match(f.read)[0] }
+    if @server == 'prod'
+      $local_ip = @@config['prod_test']
+    else
+      $local_ip = open("http://myip.dk") { |f| /([0-9]{1,3}\.){3}[0-9]{1,3}/.match(f.read)[0] }
+    end
     $fido_username = @@config['fido_username']
     $fido_password = @@config['fido_password']
     $confluence_username = @@config['confluence_username']

@@ -33,4 +33,7 @@ campaigns.each do |campaign|
   test_data << hash
 end
 
+puts test_data.inspect
+exit
+
 conversion_test(test_data, CONVERSIONS)

@@ -46,10 +46,22 @@ module FunctionalTests
           next
         end
 
+        pixel_report(test_info)
+        if test_info.data_error?
+          puts test_info[:error]
+          next
+        end
+
         @browser.get_impified(test_info)
         if test_info.data_error?
           puts test_info[:error]
           next
+        end
+
+        impression_report(test_info)
+        if test_info.data_error?
+          puts test_info[:error]
+          break
         end
 
         if test_info[:merit1].class == Float
@@ -75,20 +87,6 @@ module FunctionalTests
 
         end
 
-        #Report Results....
-
-        pixel_report(test_info)
-        if test_info.data_error?
-          puts test_info[:error]
-          next
-        end
-
-        impression_report(test_info)
-        if test_info.data_error?
-          puts test_info[:error]
-          break
-        end
-
         success_report(test_info)
         if test_info.data_error?
           puts test_info[:error]
@@ -110,7 +108,6 @@ module FunctionalTests
         product_report(test_info)
         if test_info.data_error?
           puts test_info[:error]
-          break
         end
 
         if test_info[:loyalty_id] !=nil

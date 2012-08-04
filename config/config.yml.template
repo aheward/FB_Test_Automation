@@ -57,19 +57,20 @@ confluence_password: ''
 confluence_test_data: 'http://wiki.fetchback.net:8080/display/QC/Test+Data'
 
 # Other IP addresses...
-prod_pixel: '69.71.52.54'
-prod_imp: '72.44.192.89'
+prod_test: '10.23.23.121' # This is the IP given to your machine when testing on the VPN.
+prod_pixel: '10.23.24.141'
+prod_imp: '10.23.23.200'
 pup_ip: '69.71.52.59'
 mutt_ip: '69.71.52.60'
 spot_ip: '69.71.52.53'
 cujo_ip: '69.71.52.221'
 spike_ip: '69.71.52.222'
-qa_pixel: '69.71.52.214' # The load balancer IP for pixels
-qa_imp: '69.71.52.215' # The load balancer IP for imps
-qa-fido_pixel1: '69.71.52.217'
-qa-fido_pixel2: '69.71.52.218'
-qa-fido_imp1: '69.71.52.219'
-qa-fido_imp2: '69.71.52.2220'
+qa_pixel: '74.206.99.200' # The load balancer IP for pixels
+qa_imp: '74.206.99.199' # The load balancer IP for imps
+qa-fido_pixel1: '74.206.99.201'
+qa-fido_pixel2: '174.128.15.6'
+qa-fido_imp1: '74.206.99.197'
+qa-fido_imp2: '74.206.99.198'
 
 # Logs...
 pixel: '/tmp/fb-pixels.log'

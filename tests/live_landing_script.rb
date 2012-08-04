@@ -9,10 +9,6 @@ Things to do:
 TEST_TYPE = :prod
 require '../config/conversion_env'
 
-puts $imp_log
-puts $pixel_log
-
-
 test_data = get_landing_test_data(10)
 
 pixel_and_imp_only(test_data)
