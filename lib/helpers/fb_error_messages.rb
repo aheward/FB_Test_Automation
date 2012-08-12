@@ -123,7 +123,7 @@ module FBErrorMessages
     end
 
     def self.hosts_is_prod
-      "You must point your Hosts file away from production!"
+      "Your config.yml, hosts file, and test script are not all pointing at the same test box!"
     end
 
     def self.no_config_yml

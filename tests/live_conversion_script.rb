@@ -3,16 +3,12 @@
 On PRODUCTION, This script tests the DTC, CTC, and VTC conversions 
 for the landing, dynamic, and keyword campaign types.
 
-Things to do:
-- Improve using RSpec and Test/Unit (this is a medium-term goal)
-- Add better logic for campaign and ad tag selection process... maybe
-
 =end
 #!/usr/bin/env ruby
 TEST_TYPE = :prod
 require '../config/conversion_env'
 
-campaigns = ["landing"]
+campaigns = ["landing", "keyword A"]
 
 test_data = []
 campaigns.each do |campaign|
@@ -32,8 +28,5 @@ campaigns.each do |campaign|
   pick_affiliate_or_regular(hash)
   test_data << hash
 end
-
-puts test_data.inspect
-exit
 
 conversion_test(test_data, CONVERSIONS)

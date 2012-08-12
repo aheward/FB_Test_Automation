@@ -18,6 +18,9 @@ server: 'pup' # Can be prod, pup, mutt, spike, qa-fido, cujo...
 # offset value...
 offset: 14402
 
+# Your machine's IP address (the one that will show up in the event logs):
+your_ip: '10.23.23.121'
+
 # Please enter the number of seconds you want to view
 # each creative served in tests...
 imp_viewing_time: 8
@@ -57,7 +60,6 @@ confluence_password: ''
 confluence_test_data: 'http://wiki.fetchback.net:8080/display/QC/Test+Data'
 
 # Other IP addresses...
-prod_test: '10.23.23.121' # This is the IP given to your machine when testing on the VPN.
 prod_pixel: '10.23.24.141'
 prod_imp: '10.23.23.200'
 pup_ip: '69.71.52.59'
