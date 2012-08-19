@@ -20,4 +20,6 @@ test_data.each do |site|
   site_merit_values(site)
 end
 
+(MERIT_OFFSETS.length - 1).times { test_data << test_data[0] }
+
 conversion_test(test_data, %w{vtc})
