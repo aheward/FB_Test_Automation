@@ -24,6 +24,6 @@ end
 
 test_data.delete_if { | site | site[:account_id] == 0 }
 
-conversion_test(test_data, CONVERSIONS)
+conversion_test(test_data, %w{vtc ctc})
 
 
